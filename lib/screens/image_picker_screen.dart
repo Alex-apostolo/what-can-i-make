@@ -10,58 +10,63 @@ class ImagePickerScreen extends StatelessWidget {
   ImagePickerScreen({super.key, required this.storageService});
 
   Future<void> _pickImage(BuildContext context, ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+
     try {
-      final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(source: source);
+      if (image == null || !context.mounted) return;
 
-      if (image != null && context.mounted) {
-        // Show loading dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (context) => const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text(
-                      'Analyzing kitchen items...',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-        );
+      _showLoadingDialog(context);
 
-        try {
-          // Analyze image and save items
-          final items = await _openAIService.analyzeKitchenInventory(
-            image.path,
-          );
-          await storageService.addItems(items);
+      final items = await _openAIService.analyzeKitchenInventory(image.path);
+      await storageService.addItems(items);
 
-          if (context.mounted) {
-            Navigator.pop(context); // Close loading dialog
-            Navigator.pop(context, true); // Return to home screen with success
-          }
-        } catch (e) {
-          if (context.mounted) {
-            Navigator.pop(context); // Close loading dialog
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error analyzing image: ${e.toString()}')),
-            );
-          }
-        }
-      }
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context, true); // Return to home screen with success
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: ${e.toString()}')),
-        );
+      if (!context.mounted) return;
+
+      // Close loading dialog if it's open
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
       }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
+  }
+
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Analyzing Kitchen Items',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Please wait while we process your image...',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
   }
 
   @override
