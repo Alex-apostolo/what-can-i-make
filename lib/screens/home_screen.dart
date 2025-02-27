@@ -3,8 +3,9 @@ import 'package:image_picker/image_picker.dart';
 import '../services/storage_service.dart';
 import '../models/kitchen_item.dart';
 import '../services/openai_service.dart';
-import '../components/category_section.dart';
-import '../components/image_picker_bottom_sheet.dart';
+import '../widgets/category_section.dart';
+import '../widgets/image_picker_bottom_sheet.dart';
+import '../widgets/edit_item_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -45,47 +46,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _showEditDialog(KitchenItem item) async {
-    final nameController = TextEditingController(text: item.name);
-    final quantityController = TextEditingController(text: item.quantity);
-
     return showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: const Text('Edit Item'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                TextField(
-                  controller: quantityController,
-                  decoration: const InputDecoration(labelText: 'Quantity'),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final updatedItem = item.copyWith(
-                    name: nameController.text,
-                    quantity: quantityController.text,
-                  );
-                  await widget.storageService.updateItem(updatedItem);
-                  if (mounted) {
-                    Navigator.pop(context);
-                    _loadInventory();
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
+          (context) => EditItemDialog(
+            item: item,
+            onSave: (updatedItem) async {
+              await widget.storageService.updateItem(updatedItem);
+              if (mounted) {
+                _loadInventory();
+              }
+            },
           ),
     );
   }
