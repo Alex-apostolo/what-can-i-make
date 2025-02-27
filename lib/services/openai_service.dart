@@ -59,7 +59,6 @@ Provide the response in the following JSON format:
               ]),
             ),
           ],
-          maxTokens: 1000,
         ),
       );
 
@@ -76,28 +75,31 @@ Provide the response in the following JSON format:
   /// Parses the OpenAI response and converts it to a list of KitchenItems
   List<KitchenItem> _parseResponse(String content) {
     try {
-      // Extract the JSON part from the response
       final jsonStartIndex = content.indexOf('{');
       final jsonEndIndex = content.lastIndexOf('}') + 1;
 
       if (jsonStartIndex == -1 || jsonEndIndex == -1) {
-        print('No valid JSON found in response');
+        print('Error: No valid JSON found in response');
         return [];
       }
 
       final jsonStr = content.substring(jsonStartIndex, jsonEndIndex);
       final Map<String, dynamic> jsonResponse = json.decode(jsonStr);
 
-      if (!jsonResponse.containsKey('items') ||
-          jsonResponse['items'] is! List) {
-        print('Invalid response format: missing or invalid items array');
+      if (!jsonResponse.containsKey('items')) {
+        print('Error: Invalid response format - missing items array');
         return [];
       }
 
-      return (jsonResponse['items'] as List).map((item) {
-        item['id'] = _uuid.v4();
-        return KitchenItem.fromMap(item);
-      }).toList();
+      final items = jsonResponse['items'];
+      if (items is! List) {
+        print('Error: Invalid response format - items is not an array');
+        return [];
+      }
+
+      return items
+          .map((item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}))
+          .toList();
     } catch (e) {
       print('Error parsing OpenAI response: $e');
       return [];

@@ -3,11 +3,29 @@ import 'package:image_picker/image_picker.dart';
 import '../services/openai_service.dart';
 import '../services/storage_service.dart';
 
-class ImagePickerScreen extends StatelessWidget {
+class ImagePickerScreen extends StatefulWidget {
   final StorageService storageService;
-  final OpenAIService _openAIService = OpenAIService();
 
-  ImagePickerScreen({super.key, required this.storageService});
+  const ImagePickerScreen({super.key, required this.storageService});
+
+  @override
+  State<ImagePickerScreen> createState() => _ImagePickerScreenState();
+}
+
+class _ImagePickerScreenState extends State<ImagePickerScreen> {
+  late final OpenAIService _openAIService;
+
+  @override
+  void initState() {
+    super.initState();
+    _openAIService = OpenAIService();
+  }
+
+  @override
+  void dispose() {
+    _openAIService.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage(BuildContext context, ImageSource source) async {
     final ImagePicker picker = ImagePicker();
@@ -19,7 +37,7 @@ class ImagePickerScreen extends StatelessWidget {
       _showLoadingDialog(context);
 
       final items = await _openAIService.analyzeKitchenInventory(image.path);
-      await storageService.addItems(items);
+      await widget.storageService.addItems(items);
 
       if (!context.mounted) return;
       Navigator.pop(context); // Close loading dialog
@@ -43,21 +61,21 @@ class ImagePickerScreen extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder:
-          (context) => Dialog(
+          (context) => const Dialog(
             backgroundColor: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 20),
-                  const Text(
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text(
                     'Analyzing Kitchen Items',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'Please wait while we process your image...',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey),
@@ -92,10 +110,5 @@ class ImagePickerScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _openAIService.dispose();
   }
 }
