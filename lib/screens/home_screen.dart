@@ -5,6 +5,7 @@ import '../models/kitchen_item.dart';
 import '../services/openai_service.dart';
 import '../components/category_section.dart';
 import '../components/image_picker_bottom_sheet.dart';
+import '../components/error_boundary.dart';
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -28,51 +29,90 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadInventory() async {
-    if (!mounted) return;
-    try {
-      setState(() => _isLoading = true);
-      _inventory = await widget.storageService.getInventory();
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      _showError('Error loading inventory: $e');
-    }
+    setState(() => _isLoading = true);
+    _inventory = await widget.storageService.getInventory();
+    setState(() => _isLoading = false);
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    if (!mounted) return;
-    try {
-      final image = await _picker.pickImage(source: source);
-      if (image == null || !mounted) return;
+    final image = await _picker.pickImage(source: source);
+    if (image == null) return;
 
-      setState(() => _isLoading = true);
-      final items = await _openAIService.analyzeKitchenInventory(image.path);
-      await widget.storageService.addItems(items);
-
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      _showSuccess('Successfully added ${items.length} items');
-      _loadInventory();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      _showError('Error processing image. Please try again.');
-    }
+    setState(() => _isLoading = true);
+    final items = await _openAIService.analyzeKitchenInventory(image.path);
+    await widget.storageService.addItems(items);
+    setState(() => _isLoading = false);
+    _loadInventory();
   }
 
-  void _showError(String message) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  Future<void> _showEditDialog(KitchenItem item) async {
+    final nameController = TextEditingController(text: item.name);
+    final quantityController = TextEditingController(text: item.quantity);
+
+    return showDialog(
+      context: context,
+      builder:
+          (context) => ErrorBoundary(
+            child: AlertDialog(
+              title: const Text('Edit Item'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: quantityController,
+                    decoration: const InputDecoration(labelText: 'Quantity'),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final updatedItem = item.copyWith(
+                      name: nameController.text,
+                      quantity: quantityController.text,
+                    );
+                    await widget.storageService.updateItem(updatedItem);
+                    if (mounted) {
+                      Navigator.pop(context);
+                      _loadInventory();
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+          ),
+    );
   }
 
-  void _showSuccess(String message) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+  Widget _buildCategorySection(String title, List<KitchenItem> items) {
+    return ErrorBoundary(
+      errorBuilder:
+          (error) => ListTile(
+            title: Text(title),
+            subtitle: Text('Error loading $title: $error'),
+            trailing: IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadInventory,
+            ),
+          ),
+      child: CategorySection(
+        title: title,
+        items: items,
+        onEdit: _showEditDialog,
+        onDelete: (item) async {
+          await widget.storageService.removeItem(item);
+          _loadInventory();
+        },
+      ),
     );
   }
 
@@ -85,111 +125,45 @@ class _HomeScreenState extends State<HomeScreen> {
     final equipment =
         _inventory.where((item) => item.category == 'equipment').toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kitchen Inventory'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadInventory,
-          ),
-        ],
-      ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                onRefresh: _loadInventory,
-                child: ListView(
-                  padding: const EdgeInsets.all(16.0),
-                  children: [
-                    CategorySection(
-                      title: 'Ingredients',
-                      items: ingredients,
-                      onEdit: _showEditDialog,
-                      onDelete: (item) async {
-                        await widget.storageService.removeItem(item);
-                        _loadInventory();
-                      },
-                    ),
-                    CategorySection(
-                      title: 'Utensils',
-                      items: utensils,
-                      onEdit: _showEditDialog,
-                      onDelete: (item) async {
-                        await widget.storageService.removeItem(item);
-                        _loadInventory();
-                      },
-                    ),
-                    CategorySection(
-                      title: 'Equipment',
-                      items: equipment,
-                      onEdit: _showEditDialog,
-                      onDelete: (item) async {
-                        await widget.storageService.removeItem(item);
-                        _loadInventory();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-      floatingActionButton: FloatingActionButton(
-        onPressed:
-            () => showModalBottomSheet(
-              context: context,
-              builder:
-                  (context) => ImagePickerBottomSheet(
-                    onImageSourceSelected: (source) => _pickImage(source),
+    return ErrorBoundary(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Kitchen Inventory'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadInventory,
+            ),
+          ],
+        ),
+        body:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                  onRefresh: _loadInventory,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16.0),
+                    children: [
+                      _buildCategorySection('Ingredients', ingredients),
+                      _buildCategorySection('Utensils', utensils),
+                      _buildCategorySection('Equipment', equipment),
+                    ],
                   ),
-            ),
-        child: const Icon(Icons.add_a_photo),
+                ),
+        floatingActionButton: FloatingActionButton(
+          onPressed:
+              () => showModalBottomSheet(
+                context: context,
+                builder:
+                    (context) => ErrorBoundary(
+                      child: ImagePickerBottomSheet(
+                        onImageSourceSelected: _pickImage,
+                      ),
+                    ),
+              ),
+          child: const Icon(Icons.add_a_photo),
+        ),
       ),
-    );
-  }
-
-  Future<void> _showEditDialog(KitchenItem item) async {
-    final nameController = TextEditingController(text: item.name);
-    final quantityController = TextEditingController(text: item.quantity);
-
-    await showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Edit Item'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                TextField(
-                  controller: quantityController,
-                  decoration: const InputDecoration(labelText: 'Quantity'),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final updatedItem = item.copyWith(
-                    name: nameController.text,
-                    quantity: quantityController.text,
-                  );
-                  await widget.storageService.updateItem(updatedItem);
-                  if (mounted) {
-                    Navigator.pop(context);
-                    _loadInventory();
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          ),
     );
   }
 
