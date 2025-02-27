@@ -81,12 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kitchen Inventory'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadInventory,
-          ),
-        ],
       ),
       body:
           _isLoading

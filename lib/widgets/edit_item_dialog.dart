@@ -5,11 +5,7 @@ class EditItemDialog extends StatelessWidget {
   final KitchenItem item;
   final Function(KitchenItem) onSave;
 
-  const EditItemDialog({
-    super.key,
-    required this.item,
-    required this.onSave,
-  });
+  const EditItemDialog({super.key, required this.item, required this.onSave});
 
   @override
   Widget build(BuildContext context) {
@@ -50,4 +46,4 @@ class EditItemDialog extends StatelessWidget {
       ],
     );
   }
-} 
+}

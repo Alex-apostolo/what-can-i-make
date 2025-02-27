@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/home_screen.dart';
 import 'services/storage_service.dart';
-import 'widgets/error_boundary.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Kitchen Inventory',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: ErrorBoundary(child: HomeScreen(storageService: storageService)),
+      home: HomeScreen(storageService: storageService),
     );
   }
 }
