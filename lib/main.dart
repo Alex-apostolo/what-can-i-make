@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/home_screen.dart';
-import 'screens/image_picker_screen.dart';
 import 'services/storage_service.dart';
 
 void main() async {
@@ -39,15 +38,6 @@ class MyApp extends StatelessWidget {
       title: 'Kitchen Inventory',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: HomeScreen(storageService: storageService),
-      onGenerateRoute: (settings) {
-        if (settings.name == '/add-items') {
-          return MaterialPageRoute(
-            builder:
-                (context) => ImagePickerScreen(storageService: storageService),
-          );
-        }
-        return null;
-      },
     );
   }
 }

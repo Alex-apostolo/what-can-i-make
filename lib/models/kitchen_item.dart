@@ -13,6 +13,22 @@ class KitchenItem {
     this.notes,
   });
 
+  KitchenItem copyWith({
+    String? id,
+    String? name,
+    String? category,
+    String? quantity,
+    String? notes,
+  }) {
+    return KitchenItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      quantity: quantity ?? this.quantity,
+      notes: notes ?? this.notes,
+    );
+  }
+
   // Add toMap and fromMap methods for serialization
   Map<String, dynamic> toMap() {
     return {
