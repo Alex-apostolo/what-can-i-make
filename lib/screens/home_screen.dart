@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
-import '../services/openai_service.dart';
+import '../models/kitchen_item.dart';
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -22,12 +22,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadInventory() async {
-    setState(() => _isLoading = true);
-    final items = await widget.storageService.getInventory();
-    setState(() {
-      _inventory = items;
-      _isLoading = false;
-    });
+    try {
+      setState(() => _isLoading = true);
+      final items = await widget.storageService.getInventory();
+      if (mounted) {
+        setState(() {
+          _inventory = items;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading inventory: $e')));
+      }
+      print('Error loading inventory: $e');
+    }
   }
 
   Widget _buildCategorySection(String title, List<KitchenItem> items) {
@@ -63,18 +75,96 @@ class _HomeScreenState extends State<HomeScreen> {
                             ].join('\n'),
                           )
                           : null,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () async {
-                      await widget.storageService.removeItem(item);
-                      _loadInventory();
-                    },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => _showEditDialog(item),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () async {
+                          await widget.storageService.removeItem(item);
+                          _loadInventory();
+                        },
+                      ),
+                    ],
                   ),
                 ),
               );
             },
           ),
       ],
+    );
+  }
+
+  Future<void> _showEditDialog(KitchenItem item) async {
+    final TextEditingController nameController = TextEditingController(
+      text: item.name,
+    );
+    final TextEditingController quantityController = TextEditingController(
+      text: item.quantity,
+    );
+    final TextEditingController notesController = TextEditingController(
+      text: item.notes,
+    );
+
+    return showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Edit Item'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: quantityController,
+                    decoration: const InputDecoration(labelText: 'Quantity'),
+                  ),
+                  TextField(
+                    controller: notesController,
+                    decoration: const InputDecoration(labelText: 'Notes'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final updatedItem = KitchenItem(
+                    id: item.id,
+                    name: nameController.text,
+                    category: item.category,
+                    quantity:
+                        quantityController.text.isEmpty
+                            ? null
+                            : quantityController.text,
+                    notes:
+                        notesController.text.isEmpty
+                            ? null
+                            : notesController.text,
+                  );
+
+                  await widget.storageService.updateItem(updatedItem);
+                  if (mounted) {
+                    Navigator.pop(context);
+                    _loadInventory();
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
     );
   }
 

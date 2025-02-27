@@ -2,36 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-class KitchenItem {
-  final String name;
-  final String category; // 'ingredient', 'utensil', or 'equipment'
-  final String? quantity; // Optional quantity/amount
-  final String? notes; // Additional observations
-
-  KitchenItem({
-    required this.name,
-    required this.category,
-    this.quantity,
-    this.notes,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'category': category,
-    'quantity': quantity,
-    'notes': notes,
-  };
-
-  factory KitchenItem.fromJson(Map<String, dynamic> json) {
-    return KitchenItem(
-      name: json['name'],
-      category: json['category'],
-      quantity: json['quantity'],
-      notes: json['notes'],
-    );
-  }
-}
+import '../models/kitchen_item.dart';
+import 'package:uuid/uuid.dart';
 
 class OpenAIService {
   late final OpenAIClient _client;
@@ -94,9 +66,12 @@ Provide the response in the following JSON format:
       );
       final Map<String, dynamic> jsonResponse = json.decode(jsonStr);
 
-      return (jsonResponse['items'] as List)
-          .map((item) => KitchenItem.fromJson(item))
-          .toList();
+      final uuid = Uuid();
+      return (jsonResponse['items'] as List).map((item) {
+        // Add an ID to each item before creating KitchenItem
+        item['id'] = uuid.v4();
+        return KitchenItem.fromMap(item);
+      }).toList();
     } catch (e) {
       print('Error parsing OpenAI response: $e');
       return [];
