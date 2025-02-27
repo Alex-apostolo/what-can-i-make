@@ -5,7 +5,6 @@ import '../models/kitchen_item.dart';
 import '../services/openai_service.dart';
 import '../components/category_section.dart';
 import '../components/image_picker_bottom_sheet.dart';
-import '../components/error_boundary.dart';
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -52,117 +51,102 @@ class _HomeScreenState extends State<HomeScreen> {
     return showDialog(
       context: context,
       builder:
-          (context) => ErrorBoundary(
-            child: AlertDialog(
-              title: const Text('Edit Item'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                  ),
-                  TextField(
-                    controller: quantityController,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+          (context) => AlertDialog(
+            title: const Text('Edit Item'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
                 ),
-                TextButton(
-                  onPressed: () async {
-                    final updatedItem = item.copyWith(
-                      name: nameController.text,
-                      quantity: quantityController.text,
-                    );
-                    await widget.storageService.updateItem(updatedItem);
-                    if (mounted) {
-                      Navigator.pop(context);
-                      _loadInventory();
-                    }
-                  },
-                  child: const Text('Save'),
+                TextField(
+                  controller: quantityController,
+                  decoration: const InputDecoration(labelText: 'Quantity'),
                 ),
               ],
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final updatedItem = item.copyWith(
+                    name: nameController.text,
+                    quantity: quantityController.text,
+                  );
+                  await widget.storageService.updateItem(updatedItem);
+                  if (mounted) {
+                    Navigator.pop(context);
+                    _loadInventory();
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
           ),
-    );
-  }
-
-  Widget _buildCategorySection(String title, List<KitchenItem> items) {
-    return ErrorBoundary(
-      errorBuilder:
-          (error) => ListTile(
-            title: Text(title),
-            subtitle: Text('Error loading $title: $error'),
-            trailing: IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadInventory,
-            ),
-          ),
-      child: CategorySection(
-        title: title,
-        items: items,
-        onEdit: _showEditDialog,
-        onDelete: (item) async {
-          await widget.storageService.removeItem(item);
-          _loadInventory();
-        },
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final ingredients =
-        _inventory.where((item) => item.category == 'ingredient').toList();
-    final utensils =
-        _inventory.where((item) => item.category == 'utensil').toList();
-    final equipment =
-        _inventory.where((item) => item.category == 'equipment').toList();
+    final categories = [
+      (
+        'Ingredients',
+        _inventory.where((item) => item.category == 'ingredient').toList(),
+      ),
+      (
+        'Utensils',
+        _inventory.where((item) => item.category == 'utensil').toList(),
+      ),
+      (
+        'Equipment',
+        _inventory.where((item) => item.category == 'equipment').toList(),
+      ),
+    ];
 
-    return ErrorBoundary(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Kitchen Inventory'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadInventory,
-            ),
-          ],
-        ),
-        body:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                  onRefresh: _loadInventory,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16.0),
-                    children: [
-                      _buildCategorySection('Ingredients', ingredients),
-                      _buildCategorySection('Utensils', utensils),
-                      _buildCategorySection('Equipment', equipment),
-                    ],
-                  ),
-                ),
-        floatingActionButton: FloatingActionButton(
-          onPressed:
-              () => showModalBottomSheet(
-                context: context,
-                builder:
-                    (context) => ErrorBoundary(
-                      child: ImagePickerBottomSheet(
-                        onImageSourceSelected: _pickImage,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Kitchen Inventory'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadInventory,
+          ),
+        ],
+      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                onRefresh: _loadInventory,
+                child: ListView(
+                  padding: const EdgeInsets.all(16.0),
+                  children: [
+                    for (final (title, items) in categories)
+                      CategorySection(
+                        title: title,
+                        items: items,
+                        onEdit: _showEditDialog,
+                        onDelete: (item) async {
+                          await widget.storageService.removeItem(item);
+                          _loadInventory();
+                        },
                       ),
-                    ),
+                  ],
+                ),
               ),
-          child: const Icon(Icons.add_a_photo),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed:
+            () => showModalBottomSheet(
+              context: context,
+              builder:
+                  (context) =>
+                      ImagePickerBottomSheet(onImageSourceSelected: _pickImage),
+            ),
+        child: const Icon(Icons.add_a_photo),
       ),
     );
   }
