@@ -5,30 +5,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/kitchen_item.dart';
 import 'package:uuid/uuid.dart';
 
+/// Service to handle OpenAI API interactions for kitchen inventory analysis
 class OpenAIService {
   late final OpenAIClient _client;
+  final _uuid = Uuid();
 
-  OpenAIService() {
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null) {
-      throw Exception('OpenAI API key not found in .env file');
-    }
-    _client = OpenAIClient(apiKey: apiKey);
-  }
-
-  Future<List<KitchenItem>> analyzeKitchenInventory(String imagePath) async {
-    final bytes = await File(imagePath).readAsBytes();
-    final base64Image = base64Encode(bytes);
-    final base64Uri = 'data:image/jpeg;base64,$base64Image';
-
-    final response = await _client.createChatCompletion(
-      request: CreateChatCompletionRequest(
-        model: ChatCompletionModel.modelId('gpt-4o'),
-        messages: [
-          ChatCompletionMessage.user(
-            content: ChatCompletionUserMessageContent.parts([
-              ChatCompletionMessageContentPart.text(
-                text: '''Analyze this image of a kitchen space and identify:
+  static const _analyzePrompt =
+      '''Analyze this image of a kitchen space and identify:
 1. Ingredients (foods, spices, etc.)
 2. Utensils (pots, pans, cutlery, etc.)
 3. Equipment (appliances, tools, etc.)
@@ -43,33 +26,76 @@ Provide the response in the following JSON format:
       "notes": "any relevant observations"
     }
   ]
-}''',
-              ),
-              ChatCompletionMessageContentPart.image(
-                imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
-              ),
-            ]),
-          ),
-        ],
-        maxTokens: 1000,
-      ),
-    );
+}''';
 
-    final content = response.choices.first.message.content;
-    if (content == null) return [];
+  OpenAIService() {
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    if (apiKey == null) {
+      throw Exception('OpenAI API key not found in .env file');
+    }
+    _client = OpenAIClient(apiKey: apiKey);
+  }
 
+  /// Analyzes an image of kitchen inventory and returns a list of identified items
+  ///
+  /// [imagePath] is the path to the image file to analyze
+  /// Returns a list of [KitchenItem] objects, or empty list if analysis fails
+  Future<List<KitchenItem>> analyzeKitchenInventory(String imagePath) async {
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final base64Uri = 'data:image/jpeg;base64,$base64Image';
+
+      final response = await _client.createChatCompletion(
+        request: CreateChatCompletionRequest(
+          model: ChatCompletionModel.modelId('gpt-4o'),
+          messages: [
+            ChatCompletionMessage.user(
+              content: ChatCompletionUserMessageContent.parts([
+                ChatCompletionMessageContentPart.text(text: _analyzePrompt),
+                ChatCompletionMessageContentPart.image(
+                  imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
+                ),
+              ]),
+            ),
+          ],
+          maxTokens: 1000,
+        ),
+      );
+
+      final content = response.choices.first.message.content;
+      if (content == null) return [];
+
+      return _parseResponse(content);
+    } catch (e) {
+      print('Error analyzing kitchen inventory: $e');
+      return [];
+    }
+  }
+
+  /// Parses the OpenAI response and converts it to a list of KitchenItems
+  List<KitchenItem> _parseResponse(String content) {
     try {
       // Extract the JSON part from the response
-      final jsonStr = content.substring(
-        content.indexOf('{'),
-        content.lastIndexOf('}') + 1,
-      );
+      final jsonStartIndex = content.indexOf('{');
+      final jsonEndIndex = content.lastIndexOf('}') + 1;
+
+      if (jsonStartIndex == -1 || jsonEndIndex == -1) {
+        print('No valid JSON found in response');
+        return [];
+      }
+
+      final jsonStr = content.substring(jsonStartIndex, jsonEndIndex);
       final Map<String, dynamic> jsonResponse = json.decode(jsonStr);
 
-      final uuid = Uuid();
+      if (!jsonResponse.containsKey('items') ||
+          jsonResponse['items'] is! List) {
+        print('Invalid response format: missing or invalid items array');
+        return [];
+      }
+
       return (jsonResponse['items'] as List).map((item) {
-        // Add an ID to each item before creating KitchenItem
-        item['id'] = uuid.v4();
+        item['id'] = _uuid.v4();
         return KitchenItem.fromMap(item);
       }).toList();
     } catch (e) {
@@ -78,6 +104,7 @@ Provide the response in the following JSON format:
     }
   }
 
+  /// Closes the OpenAI client session
   void dispose() {
     _client.endSession();
   }
