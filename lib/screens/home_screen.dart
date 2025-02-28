@@ -6,6 +6,7 @@ import '../services/openai_service.dart';
 import '../widgets/category_section.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
 import '../widgets/edit_item_dialog.dart';
+import '../widgets/add_item_dialog.dart';
 import '../core/error/error_handler.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -93,6 +94,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _showAddDialog() async {
+    return showDialog(
+      context: context,
+      builder:
+          (context) => AddItemDialog(
+            onAdd: (newItem) async {
+              final result = await widget.storageService.addItem(newItem);
+
+              errorHandler.handleEither(
+                result,
+                onSuccess: (_) => _loadInventory(),
+              );
+            },
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = [
@@ -111,7 +129,16 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Kitchen Inventory')),
+      appBar: AppBar(
+        title: const Text('Kitchen Inventory'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Add item manually',
+            onPressed: _showAddDialog,
+          ),
+        ],
+      ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -150,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onImageSourceSelected: _pickImage,
                     ),
               ),
+          tooltip: 'Scan items with camera',
           child: const Icon(Icons.add_a_photo),
         ),
       ),
