@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../models/kitchen_item.dart';
 
 class AddItemDialog extends StatefulWidget {
@@ -16,6 +17,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
   final _quantityController = TextEditingController();
   final _notesController = TextEditingController();
   String _selectedCategory = 'ingredient';
+  final _uuid = Uuid().v4;
 
   @override
   void dispose() {
@@ -96,7 +98,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               final newItem = KitchenItem(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                id: _uuid(),
                 name: _nameController.text,
                 category: _selectedCategory,
                 quantity: _quantityController.text,

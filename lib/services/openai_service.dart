@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:uuid/uuid.dart';
 import '../models/kitchen_item.dart';
 import 'package:dartz/dartz.dart';
 import '../core/failures/failure.dart';
@@ -9,6 +10,7 @@ import '../core/failures/failure.dart';
 /// Service to handle OpenAI API interactions for kitchen inventory analysis
 class OpenAIService {
   late final OpenAIClient _client;
+  final _uuid = Uuid().v4;
 
   static const _analyzePrompt =
       '''Analyze this image of a kitchen space and identify:
@@ -16,7 +18,7 @@ class OpenAIService {
 2. Utensils (pots, pans, cutlery, etc.)
 3. Equipment (appliances, tools, etc.)
 
-Provide the response in the following JSON format:
+Provide the response in the following JSON format without any markdown or code block tags:
 {
   "items": [
     {
@@ -26,7 +28,9 @@ Provide the response in the following JSON format:
       "notes": "any relevant observations"
     }
   ]
-}''';
+}
+
+Important: Return only the JSON with no additional text or formatting.''';
 
   OpenAIService() {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
@@ -50,7 +54,7 @@ Provide the response in the following JSON format:
 
       final response = await _client.createChatCompletion(
         request: CreateChatCompletionRequest(
-          model: ChatCompletionModel.modelId('gpt-4o'),
+          model: ChatCompletionModel.modelId('gpt-4-turbo'),
           messages: [
             ChatCompletionMessage.user(
               content: ChatCompletionUserMessageContent.parts([
@@ -88,12 +92,6 @@ Provide the response in the following JSON format:
     try {
       // Check if the content is wrapped in a code block and extract the JSON
       String jsonContent = content;
-      // Potentially remove the language tag if it's present
-      if (content.contains('```json')) {
-        final startIndex = content.indexOf('```json') + 7;
-        final endIndex = content.lastIndexOf('```');
-        jsonContent = content.substring(startIndex, endIndex).trim();
-      }
 
       // Parse the JSON string into a Map
       final Map<String, dynamic> jsonData = jsonDecode(jsonContent);
@@ -101,11 +99,10 @@ Provide the response in the following JSON format:
       // Extract the "items" list from the JSON object
       final List<dynamic> items = jsonData['items'];
 
-      // Convert each item to a KitchenItem with a generated UUID
       final kitchenItems =
           items
               .map<KitchenItem>(
-                (item) => KitchenItem.fromMap({...item, 'id': DateTime.now().millisecondsSinceEpoch.toString()}),
+                (item) => KitchenItem.fromMap({...item, 'id': _uuid()}),
               )
               .toList();
 

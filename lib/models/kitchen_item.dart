@@ -4,6 +4,7 @@ class KitchenItem {
   final String category;
   final String? quantity;
   final String? notes;
+  final DateTime createdAt;
 
   KitchenItem({
     required this.id,
@@ -11,7 +12,7 @@ class KitchenItem {
     required this.category,
     this.quantity,
     this.notes,
-  });
+  }) : createdAt = DateTime.now();
 
   KitchenItem copyWith({
     String? id,
