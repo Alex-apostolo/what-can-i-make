@@ -1,6 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/kitchen_item.dart';
+import 'package:dartz/dartz.dart';
+import '../core/failures/failure.dart';
 
 class StorageService {
   static Database? _database;
@@ -38,47 +40,75 @@ class StorageService {
     return service;
   }
 
-  Future<List<KitchenItem>> getInventory() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('items');
-    return List.generate(maps.length, (i) => KitchenItem.fromMap(maps[i]));
+  Future<Either<Failure, List<KitchenItem>>> getInventory() async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> maps = await db.query('items');
+      final items = List.generate(
+        maps.length,
+        (i) => KitchenItem.fromMap(maps[i]),
+      );
+      return Right(items);
+    } catch (e) {
+      return Left(StorageFailure('Failed to get inventory: ${e.toString()}'));
+    }
   }
 
-  Future<void> addItem(KitchenItem item) async {
-    final db = await database;
-    await db.insert(
-      'items',
-      item.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Future<void> addItems(List<KitchenItem> items) async {
-    final db = await database;
-    final batch = db.batch();
-    for (final item in items) {
-      batch.insert(
+  Future<Either<Failure, Unit>> addItem(KitchenItem item) async {
+    try {
+      final db = await database;
+      await db.insert(
         'items',
         item.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
+      return Right(unit);
+    } catch (e) {
+      return Left(StorageFailure('Failed to add item: ${e.toString()}'));
     }
-    await batch.commit();
   }
 
-  Future<void> updateItem(KitchenItem item) async {
-    final db = await database;
-    await db.update(
-      'items',
-      item.toMap(),
-      where: 'id = ?',
-      whereArgs: [item.id],
-    );
+  Future<Either<Failure, Unit>> addItems(List<KitchenItem> items) async {
+    try {
+      final db = await database;
+      final batch = db.batch();
+      for (final item in items) {
+        batch.insert(
+          'items',
+          item.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit();
+      return Right(unit);
+    } catch (e) {
+      return Left(StorageFailure('Failed to add items: ${e.toString()}'));
+    }
   }
 
-  Future<void> removeItem(KitchenItem item) async {
-    final db = await database;
-    await db.delete('items', where: 'id = ?', whereArgs: [item.id]);
+  Future<Either<Failure, Unit>> updateItem(KitchenItem item) async {
+    try {
+      final db = await database;
+      await db.update(
+        'items',
+        item.toMap(),
+        where: 'id = ?',
+        whereArgs: [item.id],
+      );
+      return Right(unit);
+    } catch (e) {
+      return Left(StorageFailure('Failed to update item: ${e.toString()}'));
+    }
+  }
+
+  Future<Either<Failure, Unit>> removeItem(KitchenItem item) async {
+    try {
+      final db = await database;
+      await db.delete('items', where: 'id = ?', whereArgs: [item.id]);
+      return Right(unit);
+    } catch (e) {
+      return Left(StorageFailure('Failed to remove item: ${e.toString()}'));
+    }
   }
 
   Future<void> close() async {

@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/kitchen_item.dart';
+import 'package:dartz/dartz.dart';
+import '../core/failures/failure.dart';
 import 'package:uuid/uuid.dart';
 
 /// Service to handle OpenAI API interactions for kitchen inventory analysis
@@ -39,56 +41,76 @@ Provide the response in the following JSON format:
   /// Analyzes an image of kitchen inventory and returns a list of identified items
   ///
   /// [imagePath] is the path to the image file to analyze
-  /// Returns a list of [KitchenItem] objects, or empty list if analysis fails
-  Future<List<KitchenItem>> analyzeKitchenInventory(String imagePath) async {
-    final bytes = await File(imagePath).readAsBytes();
-    final base64Image = base64Encode(bytes);
-    final base64Uri = 'data:image/jpeg;base64,$base64Image';
+  /// Returns Either a Failure or a list of [KitchenItem] objects
+  Future<Either<Failure, List<KitchenItem>>> analyzeKitchenInventory(
+    String imagePath,
+  ) async {
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final base64Uri = 'data:image/jpeg;base64,$base64Image';
 
-    final response = await _client.createChatCompletion(
-      request: CreateChatCompletionRequest(
-        model: ChatCompletionModel.modelId('gpt-4o'),
-        messages: [
-          ChatCompletionMessage.user(
-            content: ChatCompletionUserMessageContent.parts([
-              ChatCompletionMessageContentPart.text(text: _analyzePrompt),
-              ChatCompletionMessageContentPart.image(
-                imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
-              ),
-            ]),
-          ),
-        ],
-      ),
-    );
+      final response = await _client.createChatCompletion(
+        request: CreateChatCompletionRequest(
+          model: ChatCompletionModel.modelId('gpt-4o'),
+          messages: [
+            ChatCompletionMessage.user(
+              content: ChatCompletionUserMessageContent.parts([
+                ChatCompletionMessageContentPart.text(text: _analyzePrompt),
+                ChatCompletionMessageContentPart.image(
+                  imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
+                ),
+              ]),
+            ),
+          ],
+        ),
+      );
 
-    final content = response.choices.first.message.content;
-    if (content == null) return [];
+      final content = response.choices.first.message.content;
+      if (content == null) {
+        return Left(OpenAIFailure('Empty response from OpenAI'));
+      }
 
-    return _parseResponse(content);
+      return _parseResponse(content);
+    } on SocketException {
+      return Left(OpenAIFailure('No internet connection'));
+    } catch (e) {
+      return Left(OpenAIFailure('Failed to analyze image: ${e.toString()}'));
+    }
   }
 
   /// Parses the OpenAI response and converts it to a list of KitchenItems
-  List<KitchenItem> _parseResponse(String content) {
-    // Check if the content is wrapped in a code block and extract the JSON
-    String jsonContent = content;
-    if (content.contains('```json')) {
-      final startIndex = content.indexOf('```json') + 7;
-      final endIndex = content.lastIndexOf('```');
-      jsonContent = content.substring(startIndex, endIndex).trim();
+  Either<Failure, List<KitchenItem>> _parseResponse(String content) {
+    try {
+      // Check if the content is wrapped in a code block and extract the JSON
+      String jsonContent = content;
+      // Potentially remove the language tag if it's present
+      if (content.contains('```json')) {
+        final startIndex = content.indexOf('```json') + 7;
+        final endIndex = content.lastIndexOf('```');
+        jsonContent = content.substring(startIndex, endIndex).trim();
+      }
+
+      // Parse the JSON string into a Map
+      final Map<String, dynamic> jsonData = jsonDecode(jsonContent);
+
+      // Extract the "items" list from the JSON object
+      final List<dynamic> items = jsonData['items'];
+
+      // Convert each item to a KitchenItem with a generated UUID
+      final kitchenItems =
+          items
+              .map<KitchenItem>(
+                (item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}),
+              )
+              .toList();
+
+      return Right(kitchenItems);
+    } catch (e) {
+      return Left(
+        ParsingFailure('Failed to parse OpenAI response: ${e.toString()}'),
+      );
     }
-
-    // Parse the JSON string into a Map
-    final Map<String, dynamic> jsonData = jsonDecode(jsonContent);
-
-    // Extract the "items" list from the JSON object
-    final List<dynamic> items = jsonData['items'];
-
-    // Convert each item to a KitchenItem with a generated UUID
-    return items
-        .map<KitchenItem>(
-          (item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}),
-        )
-        .toList();
   }
 
   /// Closes the OpenAI client session

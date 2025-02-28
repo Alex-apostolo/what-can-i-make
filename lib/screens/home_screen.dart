@@ -6,6 +6,7 @@ import '../services/openai_service.dart';
 import '../widgets/category_section.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
 import '../widgets/edit_item_dialog.dart';
+import '../core/extensions/context_extensions.dart';
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -30,7 +31,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadInventory() async {
     setState(() => _isLoading = true);
-    _inventory = await widget.storageService.getInventory();
+    final result = await widget.storageService.getInventory();
+
+    context.handleEither(
+      result: result,
+      onSuccess: (items) {
+        setState(() {
+          _inventory = items;
+        });
+      },
+    );
+
     setState(() => _isLoading = false);
   }
 
@@ -39,23 +50,44 @@ class _HomeScreenState extends State<HomeScreen> {
     if (image == null) return;
 
     setState(() => _isLoading = true);
-    final items = await _openAIService.analyzeKitchenInventory(image.path);
-    await widget.storageService.addItems(items);
-    setState(() => _isLoading = false);
-    _loadInventory();
+    final result = await _openAIService.analyzeKitchenInventory(image.path);
+
+    context.handleEither(
+      result: result,
+      onSuccess: (items) async {
+        final saveResult = await widget.storageService.addItems(items);
+
+        context.handleEither(
+          result: saveResult,
+          onSuccess: (_) => _loadInventory(),
+        );
+      },
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _showEditDialog(KitchenItem item) async {
     return showDialog(
       context: context,
       builder:
-          (context) => EditItemDialog(
+          (dialogContext) => EditItemDialog(
             item: item,
             onSave: (updatedItem) async {
-              await widget.storageService.updateItem(updatedItem);
-              if (mounted) {
-                _loadInventory();
-              }
+              final result = await widget.storageService.updateItem(
+                updatedItem,
+              );
+
+              context.handleEither(
+                result: result,
+                onSuccess: (_) {
+                  if (mounted) {
+                    _loadInventory();
+                  }
+                },
+              );
             },
           ),
     );
@@ -94,8 +126,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         items: items,
                         onEdit: _showEditDialog,
                         onDelete: (item) async {
-                          await widget.storageService.removeItem(item);
-                          _loadInventory();
+                          final result = await widget.storageService.removeItem(
+                            item,
+                          );
+
+                          context.handleEither(
+                            result: result,
+                            onSuccess: (_) => _loadInventory(),
+                          );
                         },
                       ),
                   ],
