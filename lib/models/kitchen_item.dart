@@ -29,7 +29,6 @@ class KitchenItem {
     );
   }
 
-  // Add toMap and fromMap methods for serialization
   Map<String, dynamic> toMap() {
     return {
       'id': id,
