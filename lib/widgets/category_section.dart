@@ -18,32 +18,67 @@ class CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      title: Text(
-        title,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      initiallyExpanded: true,
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('No items found'),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              return ItemCard(
-                item: items[index],
-                onEdit: () => onEdit(items[index]),
-                onDelete: () => onDelete(items[index]),
-              );
-            },
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _getCategoryColor().withAlpha(30),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${items.length}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: _getCategoryColor(),
+                  ),
+                ),
+              ),
+            ],
           ),
+        ),
+        ...items.map(
+          (item) => ItemCard(
+            key: ValueKey(item.id),
+            item: item,
+            onEdit: () => onEdit(item),
+            onDelete: () => onDelete(item),
+          ),
+        ),
+        const SizedBox(height: 16),
       ],
     );
+  }
+
+  Color _getCategoryColor() {
+    switch (title.toLowerCase()) {
+      case 'ingredients':
+        return const Color(0xFF7CB342);
+      case 'utensils':
+        return const Color(0xFFFFB74D);
+      case 'equipment':
+        return const Color(0xFF64B5F6);
+      default:
+        return Colors.grey.shade400;
+    }
   }
 }

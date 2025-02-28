@@ -133,11 +133,20 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Kitchen Inventory'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Kitchen Inventory',
+          style: TextStyle(
+            color: Color(0xFF424242),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, color: Color(0xFF424242)),
             tooltip: 'Add item manually',
             onPressed: _showAddDialog,
           ),
@@ -148,27 +157,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
                 onRefresh: _loadInventory,
-                child: ListView(
-                  padding: const EdgeInsets.all(16.0),
-                  children: [
-                    for (final (title, items) in categories)
-                      CategorySection(
-                        title: title,
-                        items: items,
-                        onEdit: _showEditDialog,
-                        onDelete: (item) async {
-                          final result = await widget.storageService.removeItem(
-                            item,
-                          );
+                child:
+                    _inventory.isEmpty
+                        ? _buildEmptyState()
+                        : ListView(
+                          padding: const EdgeInsets.all(16.0),
+                          children: [
+                            for (final (title, items) in categories)
+                              if (items.isNotEmpty)
+                                CategorySection(
+                                  title: title,
+                                  items: items,
+                                  onEdit: _showEditDialog,
+                                  onDelete: (item) async {
+                                    final result = await widget.storageService
+                                        .removeItem(item);
 
-                          errorHandler.handleEither(
-                            result,
-                            onSuccess: (_) => _loadInventory(),
-                          );
-                        },
-                      ),
-                  ],
-                ),
+                                    errorHandler.handleEither(
+                                      result,
+                                      onSuccess: (_) => _loadInventory(),
+                                    );
+                                  },
+                                ),
+                          ],
+                        ),
               ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 10.0),
@@ -182,10 +194,47 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
               ),
           tooltip: 'Scan items with camera',
-          child: const Icon(Icons.add_a_photo),
+          backgroundColor: const Color(0xFF64B5F6),
+          child: const Icon(Icons.add_a_photo, color: Colors.white),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.kitchen_outlined, size: 80, color: Colors.grey.shade400),
+          const SizedBox(height: 16),
+          Text(
+            'Your kitchen inventory is empty',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add items manually or scan with camera',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _showAddDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Item'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7CB342),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
