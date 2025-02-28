@@ -69,15 +69,25 @@ Provide the response in the following JSON format:
 
   /// Parses the OpenAI response and converts it to a list of KitchenItems
   List<KitchenItem> _parseResponse(String content) {
-    final jsonStartIndex = content.indexOf('{');
-    final jsonEndIndex = content.lastIndexOf('}') + 1;
+    // Check if the content is wrapped in a code block and extract the JSON
+    String jsonContent = content;
+    if (content.contains('```json')) {
+      final startIndex = content.indexOf('```json') + 7;
+      final endIndex = content.lastIndexOf('```');
+      jsonContent = content.substring(startIndex, endIndex).trim();
+    }
 
-    final jsonStr = content.substring(jsonStartIndex, jsonEndIndex);
-    final Map<String, dynamic> jsonResponse = json.decode(jsonStr);
+    // Parse the JSON string into a Map
+    final Map<String, dynamic> jsonData = jsonDecode(jsonContent);
 
-    final items = jsonResponse['items'];
+    // Extract the "items" list from the JSON object
+    final List<dynamic> items = jsonData['items'];
+
+    // Convert each item to a KitchenItem with a generated UUID
     return items
-        .map((item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}))
+        .map<KitchenItem>(
+          (item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}),
+        )
         .toList();
   }
 
