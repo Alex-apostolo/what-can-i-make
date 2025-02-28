@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/kitchen_item.dart';
 
 class EditItemDialog extends StatefulWidget {
@@ -14,7 +15,6 @@ class EditItemDialog extends StatefulWidget {
 class _EditItemDialogState extends State<EditItemDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _quantityController;
-  late final TextEditingController _notesController;
   late String _selectedCategory;
   final _formKey = GlobalKey<FormState>();
 
@@ -22,8 +22,9 @@ class _EditItemDialogState extends State<EditItemDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.item.name);
-    _quantityController = TextEditingController(text: widget.item.quantity);
-    _notesController = TextEditingController(text: widget.item.notes);
+    _quantityController = TextEditingController(
+      text: widget.item.quantity?.toString() ?? '1',
+    );
     _selectedCategory = widget.item.category;
   }
 
@@ -31,7 +32,6 @@ class _EditItemDialogState extends State<EditItemDialog> {
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
@@ -81,17 +81,19 @@ class _EditItemDialogState extends State<EditItemDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _quantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Quantity (optional)',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (optional)',
-                ),
-                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Quantity'),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a quantity';
+                  }
+                  final number = int.tryParse(value);
+                  if (number == null || number < 1) {
+                    return 'Please enter a valid quantity';
+                  }
+                  return null;
+                },
               ),
             ],
           ),
@@ -109,8 +111,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
                 id: widget.item.id,
                 name: _nameController.text,
                 category: _selectedCategory,
-                quantity: _quantityController.text,
-                notes: _notesController.text,
+                quantity: int.tryParse(_quantityController.text) ?? 1,
               );
               widget.onSave(updatedItem);
               Navigator.of(context).pop();

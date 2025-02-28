@@ -24,13 +24,12 @@ Provide the response in the following JSON format without any markdown or code b
     {
       "name": "item name",
       "category": "ingredient/utensil/equipment",
-      "quantity": "estimated amount if visible",
-      "notes": "any relevant observations"
+      "quantity": 1
     }
   ]
 }
 
-Important: Return only the JSON with no additional text or formatting.''';
+Important: Return only the JSON with no additional text or formatting. The quantity should be a number, not a string.''';
 
   OpenAIService() {
     final apiKey = dotenv.env['OPENAI_API_KEY'];

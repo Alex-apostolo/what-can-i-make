@@ -38,8 +38,8 @@ class CategorySection extends StatelessWidget {
             itemBuilder: (context, index) {
               return ItemCard(
                 item: items[index],
-                onEdit: onEdit,
-                onDelete: onDelete,
+                onEdit: () => onEdit(items[index]),
+                onDelete: () => onDelete(items[index]),
               );
             },
           ),

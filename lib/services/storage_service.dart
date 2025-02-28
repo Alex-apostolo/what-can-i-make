@@ -25,17 +25,36 @@ class StorageService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE items(
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             category TEXT NOT NULL,
-            quantity TEXT,
-            notes TEXT
+            quantity INTEGER
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          // Drop notes column and convert quantity to INTEGER
+          await db.execute('ALTER TABLE items RENAME TO items_old');
+          await db.execute('''
+            CREATE TABLE items(
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              category TEXT NOT NULL,
+              quantity INTEGER
+            )
+          ''');
+          await db.execute('''
+            INSERT INTO items (id, name, category, quantity)
+            SELECT id, name, category, CAST(quantity AS INTEGER)
+            FROM items_old
+          ''');
+          await db.execute('DROP TABLE items_old');
+        }
       },
     );
   }

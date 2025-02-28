@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import '../models/kitchen_item.dart';
 
@@ -14,8 +15,7 @@ class AddItemDialog extends StatefulWidget {
 class _AddItemDialogState extends State<AddItemDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _quantityController = TextEditingController();
-  final _notesController = TextEditingController();
+  final _quantityController = TextEditingController(text: '1');
   String _selectedCategory = 'ingredient';
   final _uuid = Uuid().v4;
 
@@ -23,7 +23,6 @@ class _AddItemDialogState extends State<AddItemDialog> {
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
@@ -73,17 +72,19 @@ class _AddItemDialogState extends State<AddItemDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _quantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Quantity (optional)',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (optional)',
-                ),
-                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Quantity'),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a quantity';
+                  }
+                  final number = int.tryParse(value);
+                  if (number == null || number < 1) {
+                    return 'Please enter a valid quantity';
+                  }
+                  return null;
+                },
               ),
             ],
           ),
@@ -101,8 +102,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
                 id: _uuid(),
                 name: _nameController.text,
                 category: _selectedCategory,
-                quantity: _quantityController.text,
-                notes: _notesController.text,
+                quantity: int.tryParse(_quantityController.text) ?? 1,
               );
               widget.onAdd(newItem);
               Navigator.of(context).pop();
