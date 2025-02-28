@@ -68,14 +68,20 @@ Provide the response in the following JSON format:
 
       final content = response.choices.first.message.content;
       if (content == null) {
-        return Left(OpenAIFailure('Empty response from OpenAI'));
+        return Left(OpenAIEmptyResponseFailure());
       }
 
       return _parseResponse(content);
     } on SocketException {
-      return Left(OpenAIFailure('No internet connection'));
+      return Left(OpenAIConnectionFailure());
+    } on HttpException catch (e) {
+      return Left(OpenAIRequestFailure('HTTP error: ${e.message}'));
+    } on FormatException catch (e) {
+      return Left(OpenAIRequestFailure('Format error: ${e.message}'));
+    } on OpenAIClientException catch (e) {
+      return Left(OpenAIRequestFailure('OpenAI API error: ${e.message}'));
     } catch (e) {
-      return Left(OpenAIFailure('Failed to analyze image: ${e.toString()}'));
+      return Left(OpenAIRequestFailure(e.toString()));
     }
   }
 
@@ -106,9 +112,13 @@ Provide the response in the following JSON format:
               .toList();
 
       return Right(kitchenItems);
+    } on FormatException catch (e) {
+      return Left(ParsingFailure('JSON format error: ${e.message}', content));
+    } on TypeError catch (e) {
+      return Left(ParsingFailure('Type error: ${e.toString()}', content));
     } catch (e) {
       return Left(
-        ParsingFailure('Failed to parse OpenAI response: ${e.toString()}'),
+        ParsingFailure('Failed to parse response: ${e.toString()}', content),
       );
     }
   }

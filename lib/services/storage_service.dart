@@ -9,8 +9,14 @@ class StorageService {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB();
-    return _database!;
+    try {
+      _database = await _initDB();
+      return _database!;
+    } on DatabaseException catch (_) {
+      throw DatabaseConnectionFailure();
+    } catch (e) {
+      throw DatabaseConnectionFailure();
+    }
   }
 
   Future<Database> _initDB() async {
@@ -49,8 +55,12 @@ class StorageService {
         (i) => KitchenItem.fromMap(maps[i]),
       );
       return Right(items);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseQueryFailure('query', e.toString()));
+    } on FormatException catch (e) {
+      return Left(DatabaseQueryFailure('query', 'Format error: ${e.message}'));
     } catch (e) {
-      return Left(StorageFailure('Failed to get inventory: ${e.toString()}'));
+      return Left(DatabaseQueryFailure('query', e.toString()));
     }
   }
 
@@ -63,8 +73,10 @@ class StorageService {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       return Right(unit);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseQueryFailure('insert', e.toString()));
     } catch (e) {
-      return Left(StorageFailure('Failed to add item: ${e.toString()}'));
+      return Left(DatabaseQueryFailure('insert', e.toString()));
     }
   }
 
@@ -81,33 +93,53 @@ class StorageService {
       }
       await batch.commit();
       return Right(unit);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseQueryFailure('batch insert', e.toString()));
     } catch (e) {
-      return Left(StorageFailure('Failed to add items: ${e.toString()}'));
+      return Left(DatabaseQueryFailure('batch insert', e.toString()));
     }
   }
 
   Future<Either<Failure, Unit>> updateItem(KitchenItem item) async {
     try {
       final db = await database;
-      await db.update(
+      final count = await db.update(
         'items',
         item.toMap(),
         where: 'id = ?',
         whereArgs: [item.id],
       );
+
+      if (count == 0) {
+        return Left(ItemNotFoundFailure(item.id));
+      }
+
       return Right(unit);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseQueryFailure('update', e.toString()));
     } catch (e) {
-      return Left(StorageFailure('Failed to update item: ${e.toString()}'));
+      return Left(DatabaseQueryFailure('update', e.toString()));
     }
   }
 
   Future<Either<Failure, Unit>> removeItem(KitchenItem item) async {
     try {
       final db = await database;
-      await db.delete('items', where: 'id = ?', whereArgs: [item.id]);
+      final count = await db.delete(
+        'items',
+        where: 'id = ?',
+        whereArgs: [item.id],
+      );
+
+      if (count == 0) {
+        return Left(ItemNotFoundFailure(item.id));
+      }
+
       return Right(unit);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseQueryFailure('delete', e.toString()));
     } catch (e) {
-      return Left(StorageFailure('Failed to remove item: ${e.toString()}'));
+      return Left(DatabaseQueryFailure('delete', e.toString()));
     }
   }
 
