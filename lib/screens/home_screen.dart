@@ -6,7 +6,7 @@ import '../services/openai_service.dart';
 import '../widgets/category_section.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
 import '../widgets/edit_item_dialog.dart';
-import '../core/extensions/context_extensions.dart';
+import '../core/error/error_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -33,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     final result = await widget.storageService.getInventory();
 
-    context.handleEither(
-      result: result,
+    errorHandler.handleEither(
+      result,
       onSuccess: (items) {
         setState(() {
           _inventory = items;
@@ -52,13 +52,13 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     final result = await _openAIService.analyzeKitchenInventory(image.path);
 
-    context.handleEither(
-      result: result,
+    errorHandler.handleEither(
+      result,
       onSuccess: (items) async {
         final saveResult = await widget.storageService.addItems(items);
 
-        context.handleEither(
-          result: saveResult,
+        errorHandler.handleEither(
+          saveResult,
           onSuccess: (_) => _loadInventory(),
         );
       },
@@ -80,8 +80,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 updatedItem,
               );
 
-              context.handleEither(
-                result: result,
+              errorHandler.handleEither(
+                result,
                 onSuccess: (_) {
                   if (mounted) {
                     _loadInventory();
@@ -130,8 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             item,
                           );
 
-                          context.handleEither(
-                            result: result,
+                          errorHandler.handleEither(
+                            result,
                             onSuccess: (_) => _loadInventory(),
                           );
                         },
