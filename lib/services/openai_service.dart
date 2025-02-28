@@ -5,12 +5,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/kitchen_item.dart';
 import 'package:dartz/dartz.dart';
 import '../core/failures/failure.dart';
-import 'package:uuid/uuid.dart';
 
 /// Service to handle OpenAI API interactions for kitchen inventory analysis
 class OpenAIService {
   late final OpenAIClient _client;
-  final _uuid = Uuid();
 
   static const _analyzePrompt =
       '''Analyze this image of a kitchen space and identify:
@@ -88,7 +86,6 @@ Provide the response in the following JSON format:
   /// Parses the OpenAI response and converts it to a list of KitchenItems
   Either<Failure, List<KitchenItem>> _parseResponse(String content) {
     try {
-      throw Exception('test');
       // Check if the content is wrapped in a code block and extract the JSON
       String jsonContent = content;
       // Potentially remove the language tag if it's present
@@ -108,7 +105,7 @@ Provide the response in the following JSON format:
       final kitchenItems =
           items
               .map<KitchenItem>(
-                (item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}),
+                (item) => KitchenItem.fromMap({...item, 'id': DateTime.now().millisecondsSinceEpoch.toString()}),
               )
               .toList();
 

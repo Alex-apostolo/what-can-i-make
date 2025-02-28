@@ -113,18 +113,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Sort items by ID in reverse order (assuming ID is timestamp-based)
+    final sortedInventory = List<KitchenItem>.from(_inventory)
+      ..sort((a, b) => b.id.compareTo(a.id));
+
     final categories = [
       (
         'Ingredients',
-        _inventory.where((item) => item.category == 'ingredient').toList(),
+        sortedInventory.where((item) => item.category == 'ingredient').toList(),
       ),
       (
         'Utensils',
-        _inventory.where((item) => item.category == 'utensil').toList(),
+        sortedInventory.where((item) => item.category == 'utensil').toList(),
       ),
       (
         'Equipment',
-        _inventory.where((item) => item.category == 'equipment').toList(),
+        sortedInventory.where((item) => item.category == 'equipment').toList(),
       ),
     ];
 
