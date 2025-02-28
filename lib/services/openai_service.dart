@@ -18,7 +18,10 @@ class OpenAIService {
 2. Utensils (pots, pans, cutlery, etc.)
 3. Equipment (appliances, tools, etc.)
 
-Provide the response in the following JSON format without any markdown or code block tags:
+Return a list of items with their name, category, and quantity.
+The quantity should be a number, not a string.
+
+The response must be in this exact JSON format:
 {
   "items": [
     {
@@ -27,9 +30,7 @@ Provide the response in the following JSON format without any markdown or code b
       "quantity": 1
     }
   ]
-}
-
-Important: Return only the JSON with no additional text or formatting. The quantity should be a number, not a string.''';
+}''';
 
   OpenAIService() {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
@@ -55,6 +56,10 @@ Important: Return only the JSON with no additional text or formatting. The quant
         request: CreateChatCompletionRequest(
           model: ChatCompletionModel.modelId('gpt-4-turbo'),
           messages: [
+            ChatCompletionMessage.system(
+              content:
+                  'You are a helpful assistant that analyzes kitchen images and returns data in strict JSON format. Always include an "items" array in your response, even if empty.',
+            ),
             ChatCompletionMessage.user(
               content: ChatCompletionUserMessageContent.parts([
                 ChatCompletionMessageContentPart.text(text: _analyzePrompt),
@@ -89,14 +94,11 @@ Important: Return only the JSON with no additional text or formatting. The quant
   /// Parses the OpenAI response and converts it to a list of KitchenItems
   Either<Failure, List<KitchenItem>> _parseResponse(String content) {
     try {
-      // Check if the content is wrapped in a code block and extract the JSON
-      String jsonContent = content;
-
       // Parse the JSON string into a Map
-      final Map<String, dynamic> jsonData = jsonDecode(jsonContent);
+      final Map<String, dynamic> jsonData = jsonDecode(content);
 
       // Extract the "items" list from the JSON object
-      final List<dynamic> items = jsonData['items'];
+      final List<dynamic> items = jsonData['items'] ?? [];
 
       final kitchenItems =
           items
