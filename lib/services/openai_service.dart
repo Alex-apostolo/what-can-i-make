@@ -41,69 +41,44 @@ Provide the response in the following JSON format:
   /// [imagePath] is the path to the image file to analyze
   /// Returns a list of [KitchenItem] objects, or empty list if analysis fails
   Future<List<KitchenItem>> analyzeKitchenInventory(String imagePath) async {
-    try {
-      final bytes = await File(imagePath).readAsBytes();
-      final base64Image = base64Encode(bytes);
-      final base64Uri = 'data:image/jpeg;base64,$base64Image';
+    final bytes = await File(imagePath).readAsBytes();
+    final base64Image = base64Encode(bytes);
+    final base64Uri = 'data:image/jpeg;base64,$base64Image';
 
-      final response = await _client.createChatCompletion(
-        request: CreateChatCompletionRequest(
-          model: ChatCompletionModel.modelId('gpt-4o'),
-          messages: [
-            ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.parts([
-                ChatCompletionMessageContentPart.text(text: _analyzePrompt),
-                ChatCompletionMessageContentPart.image(
-                  imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
-                ),
-              ]),
-            ),
-          ],
-        ),
-      );
+    final response = await _client.createChatCompletion(
+      request: CreateChatCompletionRequest(
+        model: ChatCompletionModel.modelId('gpt-4o'),
+        messages: [
+          ChatCompletionMessage.user(
+            content: ChatCompletionUserMessageContent.parts([
+              ChatCompletionMessageContentPart.text(text: _analyzePrompt),
+              ChatCompletionMessageContentPart.image(
+                imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
+              ),
+            ]),
+          ),
+        ],
+      ),
+    );
 
-      final content = response.choices.first.message.content;
-      if (content == null) return [];
+    final content = response.choices.first.message.content;
+    if (content == null) return [];
 
-      return _parseResponse(content);
-    } catch (e) {
-      print('Error analyzing kitchen inventory: $e');
-      return [];
-    }
+    return _parseResponse(content);
   }
 
   /// Parses the OpenAI response and converts it to a list of KitchenItems
   List<KitchenItem> _parseResponse(String content) {
-    try {
-      final jsonStartIndex = content.indexOf('{');
-      final jsonEndIndex = content.lastIndexOf('}') + 1;
+    final jsonStartIndex = content.indexOf('{');
+    final jsonEndIndex = content.lastIndexOf('}') + 1;
 
-      if (jsonStartIndex == -1 || jsonEndIndex == -1) {
-        print('Error: No valid JSON found in response');
-        return [];
-      }
+    final jsonStr = content.substring(jsonStartIndex, jsonEndIndex);
+    final Map<String, dynamic> jsonResponse = json.decode(jsonStr);
 
-      final jsonStr = content.substring(jsonStartIndex, jsonEndIndex);
-      final Map<String, dynamic> jsonResponse = json.decode(jsonStr);
-
-      if (!jsonResponse.containsKey('items')) {
-        print('Error: Invalid response format - missing items array');
-        return [];
-      }
-
-      final items = jsonResponse['items'];
-      if (items is! List) {
-        print('Error: Invalid response format - items is not an array');
-        return [];
-      }
-
-      return items
-          .map((item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}))
-          .toList();
-    } catch (e) {
-      print('Error parsing OpenAI response: $e');
-      return [];
-    }
+    final items = jsonResponse['items'];
+    return items
+        .map((item) => KitchenItem.fromMap({...item, 'id': _uuid.v4()}))
+        .toList();
   }
 
   /// Closes the OpenAI client session
