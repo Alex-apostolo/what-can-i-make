@@ -88,6 +88,7 @@ Provide the response in the following JSON format:
   /// Parses the OpenAI response and converts it to a list of KitchenItems
   Either<Failure, List<KitchenItem>> _parseResponse(String content) {
     try {
+      throw Exception('test');
       // Check if the content is wrapped in a code block and extract the JSON
       String jsonContent = content;
       // Potentially remove the language tag if it's present

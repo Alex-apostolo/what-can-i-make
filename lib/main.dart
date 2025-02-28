@@ -17,7 +17,7 @@ void main() async {
         SnackBar(
           content: Text(failure.message),
           backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
         ),
       );
     }

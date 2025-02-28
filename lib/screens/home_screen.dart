@@ -139,16 +139,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-      floatingActionButton: FloatingActionButton(
-        onPressed:
-            () => showModalBottomSheet(
-              context: context,
-              builder:
-                  (context) =>
-                      ImagePickerBottomSheet(onImageSourceSelected: _pickImage),
-            ),
-        child: const Icon(Icons.add_a_photo),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 10.0),
+        child: FloatingActionButton(
+          onPressed:
+              () => showModalBottomSheet(
+                context: context,
+                builder:
+                    (context) => ImagePickerBottomSheet(
+                      onImageSourceSelected: _pickImage,
+                    ),
+              ),
+          child: const Icon(Icons.add_a_photo),
+        ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
