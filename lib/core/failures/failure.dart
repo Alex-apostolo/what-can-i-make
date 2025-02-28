@@ -22,13 +22,14 @@ class OpenAIEmptyResponseFailure extends OpenAIFailure {
 }
 
 class OpenAIRequestFailure extends OpenAIFailure {
-  const OpenAIRequestFailure(String details) : super('Failed to analyze image: $details');
+  const OpenAIRequestFailure(String details)
+    : super('Failed to analyze image: $details');
 }
 
 /// Failures related to parsing data
 class ParsingFailure extends Failure {
   final String content;
-  
+
   const ParsingFailure(String message, this.content) : super(message);
 }
 
@@ -43,13 +44,13 @@ class DatabaseConnectionFailure extends StorageFailure {
 
 class ItemNotFoundFailure extends StorageFailure {
   final String itemId;
-  
+
   const ItemNotFoundFailure(this.itemId) : super('Item not found: $itemId');
 }
 
 class DatabaseQueryFailure extends StorageFailure {
   final String operation;
-  
-  const DatabaseQueryFailure(this.operation, String details) 
-      : super('Database $operation failed: $details');
+
+  const DatabaseQueryFailure(this.operation, String details)
+    : super('Database $operation failed: $details');
 }
