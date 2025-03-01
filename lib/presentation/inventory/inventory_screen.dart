@@ -26,7 +26,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   bool _isLoading = true;
   bool _isProcessingImages = false;
   int _totalImagesToProcess = 0;
-  
+
   // Services
   late final InventoryService _inventoryService;
   late final ImageService _imageService;
@@ -34,34 +34,34 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize services
     _inventoryService = InventoryService(
       onInventoryChanged: _loadInventory,
       storageRepository: widget.storageRepository,
     );
-    
+
     _imageService = ImageService(
       onInventoryChanged: _loadInventory,
       storageRepository: widget.storageRepository,
     );
-    
+
     _loadInventory();
   }
 
   Future<void> _loadInventory() async {
     setState(() => _isLoading = true);
-    
+
     final items = await _inventoryService.loadInventory();
     setState(() => _inventory = items);
-    
+
     setState(() => _isLoading = false);
   }
 
   void _setLoading(bool isLoading) {
     setState(() => _isLoading = isLoading);
   }
-  
+
   void _setProcessingImages(bool isProcessing, int count) {
     setState(() {
       _isProcessingImages = isProcessing;
@@ -81,28 +81,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showImagePicker() {
     showModalBottomSheet(
       context: context,
-      builder: (context) => ImagePickerBottomSheet(
-        onImageSourceSelected: _pickImages,
-      ),
+      builder:
+          (context) =>
+              ImagePickerBottomSheet(onImageSourceSelected: _pickImages),
     );
   }
 
   void _showAddDialog() {
     DialogHelper.showAddDialog(context, _inventoryService.addItem);
   }
-  
+
   void _showEditDialog(KitchenItem item) {
     DialogHelper.showEditDialog(context, item, _inventoryService.updateItem);
   }
-  
+
   void _showClearConfirmationDialog() {
-    DialogHelper.showClearConfirmationDialog(
-      context,
-      () {
-        _setLoading(true);
-        _inventoryService.clearInventory();
-      },
-    );
+    DialogHelper.showClearConfirmationDialog(context, () {
+      _setLoading(true);
+      _inventoryService.clearInventory();
+    });
   }
 
   @override
@@ -117,21 +114,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
         onAddPressed: _showAddDialog,
         onClearPressed: _showClearConfirmationDialog,
       ),
-      body: _isLoading
-          ? LoadingIndicator(
-              isProcessingImages: _isProcessingImages,
-              imageCount: _totalImagesToProcess,
-            )
-          : RefreshIndicator(
-              onRefresh: _loadInventory,
-              child: hasItems
-                  ? InventoryList(
-                      categories: categories,
-                      onEdit: _showEditDialog,
-                      onDelete: _inventoryService.deleteItem,
-                    )
-                  : EmptyState(onAddPressed: _showAddDialog),
-            ),
+      body:
+          _isLoading
+              ? LoadingIndicator(
+                isProcessingImages: _isProcessingImages,
+                imageCount: _totalImagesToProcess,
+              )
+              : RefreshIndicator(
+                onRefresh: _loadInventory,
+                child:
+                    hasItems
+                        ? InventoryList(
+                          categories: categories,
+                          onEdit: _showEditDialog,
+                          onDelete: _inventoryService.deleteItem,
+                        )
+                        : EmptyState(onAddPressed: _showAddDialog),
+              ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 10.0),
         child: FloatingActionButton(
@@ -151,4 +150,4 @@ class _InventoryScreenState extends State<InventoryScreen> {
     _imageService.dispose();
     super.dispose();
   }
-} 
+}

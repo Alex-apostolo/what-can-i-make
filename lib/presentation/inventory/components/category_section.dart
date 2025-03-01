@@ -18,17 +18,19 @@ class CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: theme.shadowColor.withOpacity(0.1),
             spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -39,13 +41,13 @@ class CategorySection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
-              vertical: 12.0,
+              vertical: 14.0,
             ),
             decoration: BoxDecoration(
               color: _getCategoryColor(title).withOpacity(0.1),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8.0),
-                topRight: Radius.circular(8.0),
+                topLeft: Radius.circular(12.0),
+                topRight: Radius.circular(12.0),
               ),
             ),
             child: Row(
@@ -58,8 +60,7 @@ class CategorySection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 18,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: _getCategoryColor(title),
                   ),
@@ -67,16 +68,16 @@ class CategorySection extends StatelessWidget {
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: _getCategoryColor(title).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     '${items.length}',
-                    style: TextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: _getCategoryColor(title),
                     ),
@@ -86,19 +87,36 @@ class CategorySection extends StatelessWidget {
             ),
           ),
           // Item list
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              return ItemCard(
-                item: items[index],
-                onEdit: onEdit,
-                onDelete: onDelete,
-              );
-            },
-          ),
+          if (items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: Text(
+                  'No items in this category',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.hintColor,
+                  ),
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: items.length,
+              separatorBuilder:
+                  (context, index) => Divider(
+                    height: 1,
+                    color: theme.dividerColor.withOpacity(0.5),
+                  ),
+              itemBuilder: (context, index) {
+                return ItemCard(
+                  item: items[index],
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                );
+              },
+            ),
         ],
       ),
     );
@@ -107,13 +125,13 @@ class CategorySection extends StatelessWidget {
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'ingredients':
-        return Colors.green.shade700;
+        return Colors.green.shade600;
       case 'utensils':
-        return Colors.blue.shade700;
+        return Colors.blue.shade600;
       case 'equipment':
-        return Colors.orange.shade700;
+        return Colors.orange.shade600;
       default:
-        return Colors.grey.shade700;
+        return Colors.grey.shade600;
     }
   }
 
