@@ -46,12 +46,32 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = false);
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImage(ImageSource source, {bool multiple = false}) async {
+    if (multiple) {
+      final images = await _picker.pickMultiImage();
+      if (images.isEmpty) return;
+      
+      setState(() => _isLoading = true);
+      
+      // Process images sequentially
+      for (final image in images) {
+        await _processImage(image.path);
+      }
+      
+      setState(() => _isLoading = false);
+      return;
+    }
+    
     final image = await _picker.pickImage(source: source);
     if (image == null) return;
 
     setState(() => _isLoading = true);
-    final result = await _openAIService.analyzeKitchenInventory(image.path);
+    await _processImage(image.path);
+    setState(() => _isLoading = false);
+  }
+  
+  Future<void> _processImage(String imagePath) async {
+    final result = await _openAIService.analyzeKitchenInventory(imagePath);
 
     errorHandler.handleEither(
       result,
@@ -64,10 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   Future<void> _showEditDialog(KitchenItem item) async {
@@ -185,14 +201,12 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 10.0),
         child: FloatingActionButton(
-          onPressed:
-              () => showModalBottomSheet(
-                context: context,
-                builder:
-                    (context) => ImagePickerBottomSheet(
-                      onImageSourceSelected: _pickImage,
-                    ),
-              ),
+          onPressed: () => showModalBottomSheet(
+            context: context,
+            builder: (context) => ImagePickerBottomSheet(
+              onImageSourceSelected: _pickImage,
+            ),
+          ),
           tooltip: 'Scan items with camera',
           backgroundColor: const Color(0xFF64B5F6),
           child: const Icon(Icons.add_a_photo, color: Colors.white),
