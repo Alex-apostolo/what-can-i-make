@@ -127,6 +127,41 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _showClearConfirmationDialog() async {
+    return showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Clear Inventory'),
+            content: const Text(
+              'Are you sure you want to delete all items? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('CANCEL'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _clearInventory();
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('CLEAR ALL'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _clearInventory() async {
+    setState(() => _isLoading = true);
+
+    final result = await widget.storageService.clearInventory();
+
+    errorHandler.handleEither(result, onSuccess: (_) => _loadInventory());
+  }
+
   @override
   Widget build(BuildContext context) {
     // Sort items by ID in reverse order (assuming ID is timestamp-based)
@@ -161,6 +196,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          if (_inventory.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep, color: Color(0xFF424242)),
+              tooltip: 'Clear all items',
+              onPressed: _showClearConfirmationDialog,
+            ),
           IconButton(
             icon: const Icon(Icons.add, color: Color(0xFF424242)),
             tooltip: 'Add item manually',

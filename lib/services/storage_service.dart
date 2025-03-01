@@ -162,6 +162,18 @@ class StorageService {
     }
   }
 
+  Future<Either<Failure, Unit>> clearInventory() async {
+    try {
+      final db = await database;
+      await db.delete('items');
+      return const Right(unit);
+    } on DatabaseException catch (e) {
+      return Left(DatabaseQueryFailure('clear', e.toString()));
+    } catch (e) {
+      return Left(DatabaseQueryFailure('clear', e.toString()));
+    }
+  }
+
   Future<void> close() async {
     final db = await database;
     await db.close();
