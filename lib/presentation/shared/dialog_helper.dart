@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../domain/models/kitchen_item.dart';
+import '../../domain/models/ingredient.dart';
 import '../inventory/dialogs/add_item_dialog.dart';
 import '../inventory/dialogs/edit_item_dialog.dart';
 
@@ -7,8 +7,8 @@ class DialogHelper {
   /// Shows dialog to edit an item
   static Future<void> showEditDialog(
     BuildContext context,
-    KitchenItem item,
-    Function(KitchenItem) onSave,
+    Ingredient item,
+    Function(Ingredient) onSave,
   ) {
     return showDialog(
       context: context,
@@ -19,7 +19,7 @@ class DialogHelper {
   /// Shows dialog to add a new item
   static Future<void> showAddDialog(
     BuildContext context,
-    Function(KitchenItem) onAdd,
+    Function(Ingredient) onAdd,
   ) {
     return showDialog(
       context: context,

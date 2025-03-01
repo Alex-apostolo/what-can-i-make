@@ -2,24 +2,22 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../models/kitchen_item.dart';
+import '../models/ingredient.dart';
 import 'package:dartz/dartz.dart';
 import '../../core/error/failures/failure.dart';
-import '../../core/utils/uuid_generator.dart';
+import '../../core/utils/generate_unique_id.dart';
 
-/// Service to handle OpenAI API interactions for kitchen inventory analysis
+/// Service to handle OpenAI API interactions for ingredient analysis
 class OpenAIService {
   late final OpenAIClient _client;
 
   // Maximum number of images to process in a single request
   static const int _maxImagesPerRequest = 3;
 
-  static const _analyzePrompt = '''Analyze the kitchen image(s) and identify:
-1. Ingredients (foods, spices, etc.)
-2. Utensils (pots, pans, cutlery, etc.)
-3. Equipment (appliances, tools, etc.)
+  static const _analyzePrompt =
+      '''Analyze the kitchen image(s) and identify only ingredients (foods, spices, etc.).
 
-If multiple images are provided, combine all items into a single comprehensive list.
+If multiple images are provided, combine all ingredients into a single comprehensive list.
 The quantity should be a number, not a string.
 
 The response must be in this exact JSON format without any markdown formatting or code tags:
@@ -27,8 +25,8 @@ The response must be in this exact JSON format without any markdown formatting o
   "items": [
     {
       "name": "item name",
-      "category": "ingredient/utensil/equipment",
-      "quantity": 1
+      "quantity": 1,
+      "unit": "piece/g/kg/ml/l/tbsp/tsp"
     }
   ]
 }
@@ -43,11 +41,11 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
     _client = OpenAIClient(apiKey: apiKey);
   }
 
-  /// Analyzes kitchen inventory images and returns a list of identified items
+  /// Analyzes kitchen inventory images and returns a list of identified ingredients
   ///
   /// [imagePaths] is a list of paths to image files to analyze
-  /// Returns Either a Failure or a list of [KitchenItem] objects
-  Future<Either<Failure, List<KitchenItem>>> analyzeKitchenInventory(
+  /// Returns Either a Failure or a list of [Ingredient] objects
+  Future<Either<Failure, List<Ingredient>>> analyzeKitchenInventory(
     List<String> imagePaths,
   ) async {
     if (imagePaths.isEmpty) {
@@ -85,10 +83,10 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
   }
 
   /// Combines results from multiple batches, handling errors
-  Either<Failure, List<KitchenItem>> _combineResults(
-    List<Either<Failure, List<KitchenItem>>> results,
+  Either<Failure, List<Ingredient>> _combineResults(
+    List<Either<Failure, List<Ingredient>>> results,
   ) {
-    final allItems = <KitchenItem>[];
+    final allItems = <Ingredient>[];
 
     for (final result in results) {
       if (result.isLeft()) {
@@ -105,7 +103,7 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
   }
 
   /// Processes a batch of images (up to _maxImagesPerRequest)
-  Future<Either<Failure, List<KitchenItem>>> _processBatch(
+  Future<Either<Failure, List<Ingredient>>> _processBatch(
     List<String> batchPaths,
   ) async {
     try {
@@ -190,8 +188,8 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
     return cleaned.trim();
   }
 
-  /// Parses the OpenAI response and converts it to a list of KitchenItems
-  Either<Failure, List<KitchenItem>> _parseResponse(String content) {
+  /// Parses the OpenAI response and converts it to a list of Ingredients
+  Either<Failure, List<Ingredient>> _parseResponse(String content) {
     try {
       // Parse the JSON string into a Map
       final Map<String, dynamic> jsonData = jsonDecode(content);
@@ -199,17 +197,20 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
       // Extract the "items" list from the JSON object
       final List<dynamic> items = jsonData['items'] ?? [];
 
-      final kitchenItems =
-          items
-              .map<KitchenItem>(
-                (item) => KitchenItem.fromMap({
-                  ...item,
-                  'id': UuidGenerator.generate(),
-                }),
-              )
-              .toList();
+      final ingredients =
+          items.map<Ingredient>((item) {
+            return Ingredient(
+              id: generateUniqueId(),
+              name: item['name'],
+              quantity:
+                  (item['quantity'] is int)
+                      ? (item['quantity'] as int).toDouble()
+                      : item['quantity'],
+              unit: item['unit'] ?? 'piece',
+            );
+          }).toList();
 
-      return Right(kitchenItems);
+      return Right(ingredients);
     } on FormatException catch (e) {
       return Left(ParsingFailure('JSON format error: ${e.message}', content));
     } on TypeError catch (e) {
@@ -225,4 +226,4 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
   void dispose() {
     _client.endSession();
   }
-} 
+}

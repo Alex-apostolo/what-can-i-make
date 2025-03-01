@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../data/repositories/storage_repository.dart';
-import '../../domain/models/kitchen_item.dart';
+import '../../domain/models/ingredient.dart';
 import '../../domain/services/inventory_service.dart';
 import '../../domain/services/image_service.dart';
 import '../shared/dialog_helper.dart';
 import 'components/app_bar.dart';
 import 'components/empty_state.dart';
 import 'components/loading_indicator.dart';
-import 'components/inventory_list.dart';
+import 'components/ingredient_list.dart';
 import 'dialogs/image_picker_bottom_sheet.dart';
 import '../shared/styled_fab.dart';
 
@@ -23,7 +23,7 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   // State variables
-  List<KitchenItem> _inventory = [];
+  List<Ingredient> _inventory = [];
   bool _isLoading = true;
   bool _isProcessingImages = false;
   int _totalImagesToProcess = 0;
@@ -102,7 +102,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     DialogHelper.showAddDialog(context, _inventoryService.addItem);
   }
 
-  void _showEditDialog(KitchenItem item) {
+  void _showEditDialog(Ingredient item) {
     DialogHelper.showEditDialog(context, item, _inventoryService.updateItem);
   }
 
@@ -115,7 +115,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = _inventoryService.categorizeInventory(_inventory);
     final hasItems = _inventory.isNotEmpty;
 
     return Scaffold(
@@ -135,8 +134,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 onRefresh: _loadInventory,
                 child:
                     hasItems
-                        ? InventoryList(
-                          categories: categories,
+                        ? IngredientList(
+                          ingredients: _inventory,
                           onEdit: _showEditDialog,
                           onDelete: _inventoryService.deleteItem,
                         )
@@ -145,11 +144,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           onScanPressed: _showImagePicker,
                         ),
               ),
-      floatingActionButton: hasItems ? StyledFab(
-        onPressed: _showImagePicker,
-        icon: Icons.add_a_photo_rounded,
-        tooltip: 'Scan items with camera',
-      ) : null,
+      floatingActionButton:
+          hasItems
+              ? StyledFab(
+                onPressed: _showImagePicker,
+                icon: Icons.add_a_photo_rounded,
+                tooltip: 'Scan items with camera',
+              )
+              : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }

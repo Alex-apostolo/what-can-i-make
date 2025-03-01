@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../domain/models/kitchen_item.dart';
-import '../../../core/utils/uuid_generator.dart';
+import '../../../domain/models/ingredient.dart';
+import '../../../core/utils/generate_unique_id.dart';
 
 class AddItemDialog extends StatefulWidget {
-  final Function(KitchenItem) onAdd;
+  final Function(Ingredient) onAdd;
 
-  const AddItemDialog({
-    super.key,
-    required this.onAdd,
-  });
+  const AddItemDialog({super.key, required this.onAdd});
 
   @override
   State<AddItemDialog> createState() => _AddItemDialogState();
@@ -17,23 +14,24 @@ class AddItemDialog extends StatefulWidget {
 class _AddItemDialogState extends State<AddItemDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _quantityController = TextEditingController(text: '1');
-  String _selectedCategory = 'ingredient';
+  final _quantityController = TextEditingController();
+  final _unitController = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
+    _unitController.dispose();
     super.dispose();
   }
 
-  void _handleSubmit() {
+  void _handleAdd() {
     if (_formKey.currentState!.validate()) {
-      final newItem = KitchenItem(
-        id: UuidGenerator.generate(),
-        name: _nameController.text.trim(),
-        category: _selectedCategory,
-        quantity: int.parse(_quantityController.text),
+      final newItem = Ingredient(
+        id: generateUniqueId(),
+        name: _nameController.text,
+        quantity: double.parse(_quantityController.text),
+        unit: _unitController.text,
       );
 
       widget.onAdd(newItem);
@@ -44,7 +42,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add New Item'),
+      title: const Text('Add Ingredient'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -53,63 +51,49 @@ class _AddItemDialogState extends State<AddItemDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Item Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an item name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'ingredient',
-                    child: Text('Ingredient'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'utensil',
-                    child: Text('Utensil'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'equipment',
-                    child: Text('Equipment'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _quantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Quantity',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a quantity';
-                  }
-                  if (int.tryParse(value) == null || int.parse(value) < 1) {
-                    return 'Please enter a valid quantity';
+                    return 'Please enter a name';
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _quantityController,
+                      decoration: const InputDecoration(labelText: 'Quantity'),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Required';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Invalid number';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: _unitController,
+                      decoration: const InputDecoration(labelText: 'Unit'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Required';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -120,11 +104,8 @@ class _AddItemDialogState extends State<AddItemDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('CANCEL'),
         ),
-        ElevatedButton(
-          onPressed: _handleSubmit,
-          child: const Text('ADD'),
-        ),
+        TextButton(onPressed: _handleAdd, child: const Text('ADD')),
       ],
     );
   }
-} 
+}

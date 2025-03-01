@@ -1,10 +1,10 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../../domain/models/kitchen_item.dart';
 import 'package:dartz/dartz.dart';
 import '../../core/error/failures/failure.dart';
+import '../../domain/models/ingredient.dart';
 
-/// Repository for handling persistent storage of kitchen inventory
+/// Repository for handling persistent storage of ingredients
 class StorageRepository {
   static Database? _database;
 
@@ -26,36 +26,16 @@ class StorageRepository {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: (db, version) async {
         await db.execute('''
-          CREATE TABLE items(
+          CREATE TABLE ingredients(
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
-            category TEXT NOT NULL,
-            quantity INTEGER
+            quantity REAL NOT NULL,
+            unit TEXT NOT NULL
           )
         ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          // Drop notes column and convert quantity to INTEGER
-          await db.execute('ALTER TABLE items RENAME TO items_old');
-          await db.execute('''
-            CREATE TABLE items(
-              id TEXT PRIMARY KEY,
-              name TEXT NOT NULL,
-              category TEXT NOT NULL,
-              quantity INTEGER
-            )
-          ''');
-          await db.execute('''
-            INSERT INTO items (id, name, category, quantity)
-            SELECT id, name, category, CAST(quantity AS INTEGER)
-            FROM items_old
-          ''');
-          await db.execute('DROP TABLE items_old');
-        }
       },
     );
   }
@@ -67,15 +47,13 @@ class StorageRepository {
     return repository;
   }
 
-  /// Retrieves all items from the inventory
-  Future<Either<Failure, List<KitchenItem>>> getInventory() async {
+  /// Retrieves all ingredients from the inventory
+  Future<Either<Failure, List<Ingredient>>> getInventory() async {
     try {
       final db = await database;
-      final items = await db.query('items');
+      final items = await db.query('ingredients');
 
-      return Right(
-        items.map((item) => KitchenItem.fromMap(item)).toList(),
-      );
+      return Right(items.map((item) => Ingredient.fromJson(item)).toList());
     } on DatabaseException catch (e) {
       return Left(DatabaseQueryFailure('query', e.toString()));
     } catch (e) {
@@ -83,11 +61,11 @@ class StorageRepository {
     }
   }
 
-  /// Adds a new item to the inventory
-  Future<Either<Failure, Unit>> addItem(KitchenItem item) async {
+  /// Adds a new ingredient to the inventory
+  Future<Either<Failure, Unit>> addItem(Ingredient item) async {
     try {
       final db = await database;
-      await db.insert('items', item.toMap());
+      await db.insert('ingredients', item.toJson());
 
       return const Right(unit);
     } on DatabaseException catch (e) {
@@ -97,14 +75,14 @@ class StorageRepository {
     }
   }
 
-  /// Adds multiple items to the inventory
-  Future<Either<Failure, Unit>> addItems(List<KitchenItem> items) async {
+  /// Adds multiple ingredients to the inventory
+  Future<Either<Failure, Unit>> addItems(List<Ingredient> items) async {
     try {
       final db = await database;
       final batch = db.batch();
 
       for (final item in items) {
-        batch.insert('items', item.toMap());
+        batch.insert('ingredients', item.toJson());
       }
 
       await batch.commit(noResult: true);
@@ -116,13 +94,13 @@ class StorageRepository {
     }
   }
 
-  /// Updates an existing item in the inventory
-  Future<Either<Failure, Unit>> updateItem(KitchenItem item) async {
+  /// Updates an existing ingredient in the inventory
+  Future<Either<Failure, Unit>> updateItem(Ingredient item) async {
     try {
       final db = await database;
       final count = await db.update(
-        'items',
-        item.toMap(),
+        'ingredients',
+        item.toJson(),
         where: 'id = ?',
         whereArgs: [item.id],
       );
@@ -131,7 +109,7 @@ class StorageRepository {
         return Left(ItemNotFoundFailure(item.id));
       }
 
-      return Right(unit);
+      return const Right(unit);
     } on DatabaseException catch (e) {
       return Left(DatabaseQueryFailure('update', e.toString()));
     } catch (e) {
@@ -139,12 +117,12 @@ class StorageRepository {
     }
   }
 
-  /// Removes an item from the inventory
-  Future<Either<Failure, Unit>> removeItem(KitchenItem item) async {
+  /// Removes an ingredient from the inventory
+  Future<Either<Failure, Unit>> removeItem(Ingredient item) async {
     try {
       final db = await database;
       final count = await db.delete(
-        'items',
+        'ingredients',
         where: 'id = ?',
         whereArgs: [item.id],
       );
@@ -153,7 +131,7 @@ class StorageRepository {
         return Left(ItemNotFoundFailure(item.id));
       }
 
-      return Right(unit);
+      return const Right(unit);
     } on DatabaseException catch (e) {
       return Left(DatabaseQueryFailure('delete', e.toString()));
     } catch (e) {
@@ -161,11 +139,11 @@ class StorageRepository {
     }
   }
 
-  /// Clears all inventory items
+  /// Clears all inventory ingredients
   Future<Either<Failure, Unit>> clearInventory() async {
     try {
       final db = await database;
-      await db.delete('items');
+      await db.delete('ingredients');
       return const Right(unit);
     } on DatabaseException catch (e) {
       return Left(DatabaseQueryFailure('clear', e.toString()));
@@ -179,4 +157,4 @@ class StorageRepository {
     final db = await database;
     await db.close();
   }
-} 
+}
