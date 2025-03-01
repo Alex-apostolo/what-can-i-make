@@ -46,30 +46,21 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = false);
   }
 
-  Future<void> _pickImage(ImageSource source, {bool multiple = false}) async {
-    if (multiple) {
-      final images = await _picker.pickMultiImage();
-      if (images.isEmpty) return;
-      
-      setState(() => _isLoading = true);
-      
-      // Process images sequentially
-      for (final image in images) {
-        await _processImage(image.path);
-      }
-      
-      setState(() => _isLoading = false);
-      return;
-    }
-    
-    final image = await _picker.pickImage(source: source);
-    if (image == null) return;
+  Future<void> _pickImages(ImageSource source) async {
+    final images = await _picker.pickMultiImage();
+    if (images.isEmpty) return;
 
     setState(() => _isLoading = true);
-    await _processImage(image.path);
+
+    // Process images sequentially
+    for (final image in images) {
+      await _processImage(image.path);
+    }
+
     setState(() => _isLoading = false);
+    return;
   }
-  
+
   Future<void> _processImage(String imagePath) async {
     final result = await _openAIService.analyzeKitchenInventory(imagePath);
 
@@ -201,12 +192,14 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 10.0),
         child: FloatingActionButton(
-          onPressed: () => showModalBottomSheet(
-            context: context,
-            builder: (context) => ImagePickerBottomSheet(
-              onImageSourceSelected: _pickImage,
-            ),
-          ),
+          onPressed:
+              () => showModalBottomSheet(
+                context: context,
+                builder:
+                    (context) => ImagePickerBottomSheet(
+                      onImageSourceSelected: _pickImages,
+                    ),
+              ),
           tooltip: 'Scan items with camera',
           backgroundColor: const Color(0xFF64B5F6),
           child: const Icon(Icons.add_a_photo, color: Colors.white),

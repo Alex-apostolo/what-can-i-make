@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ImagePickerBottomSheet extends StatelessWidget {
-  final Function(ImageSource, {bool multiple}) onImageSourceSelected;
+  final Function(ImageSource) onImageSourceSelected;
 
   const ImagePickerBottomSheet({
     super.key,
@@ -43,7 +43,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
                 title: 'Gallery',
                 onTap: () {
                   Navigator.pop(context);
-                  onImageSourceSelected(ImageSource.gallery, multiple: true);
+                  onImageSourceSelected(ImageSource.gallery);
                 },
               ),
             ],
