@@ -16,23 +16,16 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.white,
-      title: const Text(
-        'Kitchen Inventory',
-        style: TextStyle(
-          color: Color(0xFF424242),
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      title: const Text('Kitchen Inventory'),
       actions: [
         if (hasItems)
           IconButton(
-            icon: const Icon(Icons.delete_sweep, color: Color(0xFF424242)),
+            icon: const Icon(Icons.delete_sweep),
             tooltip: 'Clear all items',
             onPressed: onClearPressed,
           ),
         IconButton(
-          icon: const Icon(Icons.add, color: Color(0xFF424242)),
+          icon: const Icon(Icons.add),
           tooltip: 'Add item manually',
           onPressed: onAddPressed,
         ),
@@ -42,4 +35,4 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-} 
+}

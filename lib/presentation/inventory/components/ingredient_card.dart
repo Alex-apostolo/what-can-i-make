@@ -16,75 +16,84 @@ class IngredientCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return InkWell(
-      onTap: () => onEdit(ingredient),
-      borderRadius: BorderRadius.circular(12.0),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12.0),
+      child: InkWell(
+        onTap: () => onEdit(ingredient),
+        borderRadius: BorderRadius.circular(16.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              // Left color accent
+              Container(
+                width: 4,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              
+              const SizedBox(width: 16),
+              
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ingredient.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const SizedBox(height: 8.0),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0,
+                        vertical: 4.0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Text(
+                        '${ingredient.quantity} ${ingredient.unit}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Actions
+              Row(
                 children: [
-                  Text(
-                    ingredient.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  IconButton(
+                    icon: Icon(Icons.edit_outlined, color: colorScheme.primary),
+                    onPressed: () => onEdit(ingredient),
+                    tooltip: 'Edit',
                   ),
-
-                  const SizedBox(height: 4.0),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 2.0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(
-                        color: Colors.green.shade200,
-                        width: 1.0,
-                      ),
-                    ),
-                    child: Text(
-                      '${ingredient.quantity} ${ingredient.unit}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.green.shade800,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                    onPressed: () => onDelete(ingredient),
+                    tooltip: 'Delete',
                   ),
                 ],
               ),
-            ),
-
-            // Actions
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => onEdit(ingredient),
-                  tooltip: 'Edit',
-                  iconSize: 20.0,
-                  color: theme.colorScheme.primary,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => onDelete(ingredient),
-                  tooltip: 'Delete',
-                  iconSize: 20.0,
-                  color: Colors.red,
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

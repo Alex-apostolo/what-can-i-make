@@ -18,6 +18,13 @@ class _AddItemDialogState extends State<AddItemDialog> {
   final _unitController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Set default unit
+    _unitController.text = 'piece';
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
@@ -41,8 +48,14 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AlertDialog(
-      title: const Text('Add Ingredient'),
+      title: Text(
+        'Add Ingredient',
+        style: TextStyle(color: colorScheme.primary),
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -51,13 +64,17 @@ class _AddItemDialogState extends State<AddItemDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  prefixIcon: Icon(Icons.restaurant),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a name';
                   }
                   return null;
                 },
+                textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 16),
               Row(
@@ -66,7 +83,10 @@ class _AddItemDialogState extends State<AddItemDialog> {
                     flex: 2,
                     child: TextFormField(
                       controller: _quantityController,
-                      decoration: const InputDecoration(labelText: 'Quantity'),
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        prefixIcon: Icon(Icons.numbers),
+                      ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -84,7 +104,10 @@ class _AddItemDialogState extends State<AddItemDialog> {
                     flex: 3,
                     child: TextFormField(
                       controller: _unitController,
-                      decoration: const InputDecoration(labelText: 'Unit'),
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        prefixIcon: Icon(Icons.scale),
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Required';
@@ -102,9 +125,16 @@ class _AddItemDialogState extends State<AddItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('CANCEL'),
+          child: Text('CANCEL', style: TextStyle(color: colorScheme.secondary)),
         ),
-        TextButton(onPressed: _handleAdd, child: const Text('ADD')),
+        ElevatedButton(
+          onPressed: _handleAdd,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+          ),
+          child: const Text('ADD'),
+        ),
       ],
     );
   }

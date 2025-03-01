@@ -118,7 +118,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final hasItems = _inventory.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       appBar: HomeAppBar(
         hasItems: hasItems,
         onAddPressed: _showAddDialog,
