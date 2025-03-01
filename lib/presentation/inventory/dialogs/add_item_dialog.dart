@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
-import '../models/kitchen_item.dart';
+import '../../../domain/models/kitchen_item.dart';
+import '../../../core/utils/uuid_generator.dart';
 
 class AddItemDialog extends StatefulWidget {
   final Function(KitchenItem) onAdd;
 
-  const AddItemDialog({super.key, required this.onAdd});
+  const AddItemDialog({
+    super.key,
+    required this.onAdd,
+  });
 
   @override
   State<AddItemDialog> createState() => _AddItemDialogState();
@@ -17,7 +19,6 @@ class _AddItemDialogState extends State<AddItemDialog> {
   final _nameController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
   String _selectedCategory = 'ingredient';
-  final _uuid = Uuid().v4;
 
   @override
   void dispose() {
@@ -26,10 +27,24 @@ class _AddItemDialogState extends State<AddItemDialog> {
     super.dispose();
   }
 
+  void _handleSubmit() {
+    if (_formKey.currentState!.validate()) {
+      final newItem = KitchenItem(
+        id: UuidGenerator.generate(),
+        name: _nameController.text.trim(),
+        category: _selectedCategory,
+        quantity: int.parse(_quantityController.text),
+      );
+
+      widget.onAdd(newItem);
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Kitchen Item'),
+      title: const Text('Add New Item'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -38,10 +53,13 @@ class _AddItemDialogState extends State<AddItemDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Item Name',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an item name';
                   }
                   return null;
                 },
@@ -49,13 +67,19 @@ class _AddItemDialogState extends State<AddItemDialog> {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
-                decoration: const InputDecoration(labelText: 'Category'),
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
                 items: const [
                   DropdownMenuItem(
                     value: 'ingredient',
                     child: Text('Ingredient'),
                   ),
-                  DropdownMenuItem(value: 'utensil', child: Text('Utensil')),
+                  DropdownMenuItem(
+                    value: 'utensil',
+                    child: Text('Utensil'),
+                  ),
                   DropdownMenuItem(
                     value: 'equipment',
                     child: Text('Equipment'),
@@ -72,15 +96,16 @@ class _AddItemDialogState extends State<AddItemDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _quantityController,
-                decoration: const InputDecoration(labelText: 'Quantity'),
+                decoration: const InputDecoration(
+                  labelText: 'Quantity',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a quantity';
                   }
-                  final number = int.tryParse(value);
-                  if (number == null || number < 1) {
+                  if (int.tryParse(value) == null || int.parse(value) < 1) {
                     return 'Please enter a valid quantity';
                   }
                   return null;
@@ -93,24 +118,13 @@ class _AddItemDialogState extends State<AddItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('CANCEL'),
         ),
         ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final newItem = KitchenItem(
-                id: _uuid(),
-                name: _nameController.text,
-                category: _selectedCategory,
-                quantity: int.tryParse(_quantityController.text) ?? 1,
-              );
-              widget.onAdd(newItem);
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Add'),
+          onPressed: _handleSubmit,
+          child: const Text('ADD'),
         ),
       ],
     );
   }
-}
+} 

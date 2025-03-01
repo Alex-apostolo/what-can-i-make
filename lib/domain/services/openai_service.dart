@@ -2,15 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:uuid/uuid.dart';
 import '../models/kitchen_item.dart';
 import 'package:dartz/dartz.dart';
-import '../core/failures/failure.dart';
+import '../../core/error/failures/failure.dart';
+import '../../core/utils/uuid_generator.dart';
 
 /// Service to handle OpenAI API interactions for kitchen inventory analysis
 class OpenAIService {
   late final OpenAIClient _client;
-  final _uuid = Uuid().v4;
+
+  // Maximum number of images to process in a single request
+  static const int _maxImagesPerRequest = 3;
 
   static const _analyzePrompt = '''Analyze the kitchen image(s) and identify:
 1. Ingredients (foods, spices, etc.)
@@ -53,50 +55,68 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
     }
 
     try {
-      final imageParts = <ChatCompletionMessageContentPart>[];
+      // Create batches of images to process in parallel
+      final batches = _createBatches(imagePaths);
 
-      // Add the prompt
-      imageParts.add(
-        ChatCompletionMessageContentPart.text(text: _analyzePrompt),
-      );
+      // Process all batches in parallel
+      final results = await Future.wait(batches.map(_processBatch));
 
-      // Add each image as a part (up to 10 images max)
-      final limitedPaths = imagePaths.take(10).toList();
-      print("limitedPaths length: ${limitedPaths.length}");
+      return _combineResults(results);
+    } catch (e) {
+      return Left(OpenAIRequestFailure(e.toString()));
+    }
+  }
 
-      for (final path in limitedPaths) {
-        final bytes = await File(path).readAsBytes();
-        final base64Image = base64Encode(bytes);
-        final base64Uri = 'data:image/jpeg;base64,$base64Image';
+  /// Creates batches of images for parallel processing
+  List<List<String>> _createBatches(List<String> imagePaths) {
+    final batches = <List<String>>[];
 
-        imageParts.add(
-          ChatCompletionMessageContentPart.image(
-            imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
-          ),
-        );
+    for (int i = 0; i < imagePaths.length; i += _maxImagesPerRequest) {
+      final end =
+          (i + _maxImagesPerRequest < imagePaths.length)
+              ? i + _maxImagesPerRequest
+              : imagePaths.length;
+
+      final batchPaths = imagePaths.sublist(i, end);
+      batches.add(batchPaths);
+    }
+
+    return batches;
+  }
+
+  /// Combines results from multiple batches, handling errors
+  Either<Failure, List<KitchenItem>> _combineResults(
+    List<Either<Failure, List<KitchenItem>>> results,
+  ) {
+    final allItems = <KitchenItem>[];
+
+    for (final result in results) {
+      if (result.isLeft()) {
+        // Return the first error encountered
+        return result;
       }
 
-      final response = await _client.createChatCompletion(
-        request: CreateChatCompletionRequest(
-          model: ChatCompletionModel.modelId('gpt-4-turbo'),
-          messages: [
-            ChatCompletionMessage.system(
-              content:
-                  'You are a helpful assistant that analyzes kitchen images and returns data in strict JSON format. Always include an "items" array in your response, even if empty. Never include markdown formatting, code block tags, or any text outside the JSON object.',
-            ),
-            ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.parts(imageParts),
-            ),
-          ],
-        ),
-      );
+      // Extract items from the successful result
+      final items = result.getOrElse(() => []);
+      allItems.addAll(items);
+    }
+
+    return Right(allItems);
+  }
+
+  /// Processes a batch of images (up to _maxImagesPerRequest)
+  Future<Either<Failure, List<KitchenItem>>> _processBatch(
+    List<String> batchPaths,
+  ) async {
+    try {
+      final imageParts = await _prepareImageParts(batchPaths);
+      final response = await _sendApiRequest(imageParts);
 
       final content = response.choices.first.message.content;
       if (content == null) {
         return Left(OpenAIEmptyResponseFailure());
       }
 
-      // Clean any potential markdown or code tags that might have slipped through
       final cleanedContent = _cleanJsonContent(content);
       return _parseResponse(cleanedContent);
     } on SocketException {
@@ -112,9 +132,53 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
     }
   }
 
+  /// Prepares image parts for the API request
+  Future<List<ChatCompletionMessageContentPart>> _prepareImageParts(
+    List<String> batchPaths,
+  ) async {
+    final imageParts = <ChatCompletionMessageContentPart>[];
+
+    // Add the prompt
+    imageParts.add(ChatCompletionMessageContentPart.text(text: _analyzePrompt));
+
+    // Add each image as a part
+    for (final path in batchPaths) {
+      final bytes = await File(path).readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final base64Uri = 'data:image/jpeg;base64,$base64Image';
+
+      imageParts.add(
+        ChatCompletionMessageContentPart.image(
+          imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
+        ),
+      );
+    }
+
+    return imageParts;
+  }
+
+  /// Sends the API request to OpenAI
+  Future<CreateChatCompletionResponse> _sendApiRequest(
+    List<ChatCompletionMessageContentPart> imageParts,
+  ) {
+    return _client.createChatCompletion(
+      request: CreateChatCompletionRequest(
+        model: ChatCompletionModel.modelId('gpt-4-turbo'),
+        messages: [
+          ChatCompletionMessage.system(
+            content:
+                'You are a helpful assistant that analyzes kitchen images and returns data in strict JSON format. Always include an "items" array in your response, even if empty. Never include markdown formatting, code block tags, or any text outside the JSON object.',
+          ),
+          ChatCompletionMessage.user(
+            content: ChatCompletionUserMessageContent.parts(imageParts),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Cleans the content to ensure it's valid JSON without markdown or code tags
   String _cleanJsonContent(String content) {
-    // Remove markdown code block markers if present
     String cleaned = content;
 
     // Remove ```json and ``` markers
@@ -123,9 +187,7 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
     cleaned = cleaned.replaceAll('```', '');
 
     // Remove any leading/trailing whitespace
-    cleaned = cleaned.trim();
-
-    return cleaned;
+    return cleaned.trim();
   }
 
   /// Parses the OpenAI response and converts it to a list of KitchenItems
@@ -140,7 +202,10 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
       final kitchenItems =
           items
               .map<KitchenItem>(
-                (item) => KitchenItem.fromMap({...item, 'id': _uuid()}),
+                (item) => KitchenItem.fromMap({
+                  ...item,
+                  'id': UuidGenerator.generate(),
+                }),
               )
               .toList();
 
@@ -160,4 +225,4 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
   void dispose() {
     _client.endSession();
   }
-}
+} 

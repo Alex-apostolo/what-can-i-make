@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'screens/home_screen.dart';
-import 'services/storage_service.dart';
+import 'presentation/inventory/inventory_screen.dart';
+import 'data/repositories/storage_repository.dart';
 import 'core/error/error_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
-  final storageService = await StorageService.initialize();
+  await dotenv.load();
+  final storageRepository = await StorageRepository.initialize();
 
   // Set up global error handler
   errorHandler.showError = (failure) {
@@ -23,24 +23,27 @@ void main() async {
     }
   };
 
-  runApp(MyApp(storageService: storageService));
+  runApp(MyApp(storageRepository: storageRepository));
 }
 
 // Add a global navigator key
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class MyApp extends StatelessWidget {
-  final StorageService storageService;
-
-  const MyApp({super.key, required this.storageService});
+  final StorageRepository storageRepository;
+  
+  const MyApp({super.key, required this.storageRepository});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Kitchen Inventory',
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF64B5F6)),
+        useMaterial3: true,
+      ),
       navigatorKey: navigatorKey,
-      home: HomeScreen(storageService: storageService),
+      home: InventoryScreen(storageRepository: storageRepository),
     );
   }
 }

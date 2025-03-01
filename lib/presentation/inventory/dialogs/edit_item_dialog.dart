@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../models/kitchen_item.dart';
+import '../../../domain/models/kitchen_item.dart';
 
 class EditItemDialog extends StatefulWidget {
   final KitchenItem item;
   final Function(KitchenItem) onSave;
 
-  const EditItemDialog({super.key, required this.item, required this.onSave});
+  const EditItemDialog({
+    super.key,
+    required this.item,
+    required this.onSave,
+  });
 
   @override
   State<EditItemDialog> createState() => _EditItemDialogState();
 }
 
 class _EditItemDialogState extends State<EditItemDialog> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _quantityController;
   late String _selectedCategory;
-  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.item.name);
-    _quantityController = TextEditingController(
-      text: widget.item.quantity?.toString() ?? '1',
-    );
+    _quantityController = TextEditingController(text: widget.item.quantity.toString());
     _selectedCategory = widget.item.category;
   }
 
@@ -33,6 +34,19 @@ class _EditItemDialogState extends State<EditItemDialog> {
     _nameController.dispose();
     _quantityController.dispose();
     super.dispose();
+  }
+
+  void _handleSubmit() {
+    if (_formKey.currentState!.validate()) {
+      final updatedItem = widget.item.copyWith(
+        name: _nameController.text.trim(),
+        category: _selectedCategory,
+        quantity: int.parse(_quantityController.text),
+      );
+
+      widget.onSave(updatedItem);
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -47,10 +61,13 @@ class _EditItemDialogState extends State<EditItemDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Item Name',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter an item name';
                   }
                   return null;
                 },
@@ -58,13 +75,19 @@ class _EditItemDialogState extends State<EditItemDialog> {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
-                decoration: const InputDecoration(labelText: 'Category'),
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
                 items: const [
                   DropdownMenuItem(
                     value: 'ingredient',
                     child: Text('Ingredient'),
                   ),
-                  DropdownMenuItem(value: 'utensil', child: Text('Utensil')),
+                  DropdownMenuItem(
+                    value: 'utensil',
+                    child: Text('Utensil'),
+                  ),
                   DropdownMenuItem(
                     value: 'equipment',
                     child: Text('Equipment'),
@@ -81,15 +104,16 @@ class _EditItemDialogState extends State<EditItemDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _quantityController,
-                decoration: const InputDecoration(labelText: 'Quantity'),
+                decoration: const InputDecoration(
+                  labelText: 'Quantity',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a quantity';
                   }
-                  final number = int.tryParse(value);
-                  if (number == null || number < 1) {
+                  if (int.tryParse(value) == null || int.parse(value) < 1) {
                     return 'Please enter a valid quantity';
                   }
                   return null;
@@ -102,24 +126,13 @@ class _EditItemDialogState extends State<EditItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('CANCEL'),
         ),
         ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final updatedItem = KitchenItem(
-                id: widget.item.id,
-                name: _nameController.text,
-                category: _selectedCategory,
-                quantity: int.tryParse(_quantityController.text) ?? 1,
-              );
-              widget.onSave(updatedItem);
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Save'),
+          onPressed: _handleSubmit,
+          child: const Text('SAVE'),
         ),
       ],
     );
   }
-}
+} 

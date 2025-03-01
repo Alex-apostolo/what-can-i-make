@@ -1,10 +1,11 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../models/kitchen_item.dart';
+import '../../domain/models/kitchen_item.dart';
 import 'package:dartz/dartz.dart';
-import '../core/failures/failure.dart';
+import '../../core/error/failures/failure.dart';
 
-class StorageService {
+/// Repository for handling persistent storage of kitchen inventory
+class StorageRepository {
   static Database? _database;
 
   Future<Database> get database async {
@@ -59,39 +60,36 @@ class StorageService {
     );
   }
 
-  static Future<StorageService> initialize() async {
-    final service = StorageService();
-    await service.database; // Ensure database is initialized
-    return service;
+  /// Factory constructor to initialize the database
+  static Future<StorageRepository> initialize() async {
+    final repository = StorageRepository();
+    await repository.database;
+    return repository;
   }
 
+  /// Retrieves all items from the inventory
   Future<Either<Failure, List<KitchenItem>>> getInventory() async {
     try {
       final db = await database;
-      final List<Map<String, dynamic>> maps = await db.query('items');
-      final items = List.generate(
-        maps.length,
-        (i) => KitchenItem.fromMap(maps[i]),
+      final items = await db.query('items');
+
+      return Right(
+        items.map((item) => KitchenItem.fromMap(item)).toList(),
       );
-      return Right(items);
     } on DatabaseException catch (e) {
       return Left(DatabaseQueryFailure('query', e.toString()));
-    } on FormatException catch (e) {
-      return Left(DatabaseQueryFailure('query', 'Format error: ${e.message}'));
     } catch (e) {
       return Left(DatabaseQueryFailure('query', e.toString()));
     }
   }
 
+  /// Adds a new item to the inventory
   Future<Either<Failure, Unit>> addItem(KitchenItem item) async {
     try {
       final db = await database;
-      await db.insert(
-        'items',
-        item.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-      return Right(unit);
+      await db.insert('items', item.toMap());
+
+      return const Right(unit);
     } on DatabaseException catch (e) {
       return Left(DatabaseQueryFailure('insert', e.toString()));
     } catch (e) {
@@ -99,19 +97,18 @@ class StorageService {
     }
   }
 
+  /// Adds multiple items to the inventory
   Future<Either<Failure, Unit>> addItems(List<KitchenItem> items) async {
     try {
       final db = await database;
       final batch = db.batch();
+
       for (final item in items) {
-        batch.insert(
-          'items',
-          item.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        batch.insert('items', item.toMap());
       }
-      await batch.commit();
-      return Right(unit);
+
+      await batch.commit(noResult: true);
+      return const Right(unit);
     } on DatabaseException catch (e) {
       return Left(DatabaseQueryFailure('batch insert', e.toString()));
     } catch (e) {
@@ -119,6 +116,7 @@ class StorageService {
     }
   }
 
+  /// Updates an existing item in the inventory
   Future<Either<Failure, Unit>> updateItem(KitchenItem item) async {
     try {
       final db = await database;
@@ -141,6 +139,7 @@ class StorageService {
     }
   }
 
+  /// Removes an item from the inventory
   Future<Either<Failure, Unit>> removeItem(KitchenItem item) async {
     try {
       final db = await database;
@@ -162,6 +161,7 @@ class StorageService {
     }
   }
 
+  /// Clears all inventory items
   Future<Either<Failure, Unit>> clearInventory() async {
     try {
       final db = await database;
@@ -174,8 +174,9 @@ class StorageService {
     }
   }
 
+  /// Closes the database connection
   Future<void> close() async {
     final db = await database;
     await db.close();
   }
-}
+} 

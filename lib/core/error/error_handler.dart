@@ -1,33 +1,25 @@
 import 'package:dartz/dartz.dart';
-import '../failures/failure.dart';
+import 'failures/failure.dart';
 
 /// Global error handler for the application
 class ErrorHandler {
-  static final ErrorHandler _instance = ErrorHandler._internal();
-  factory ErrorHandler() => _instance;
-  ErrorHandler._internal();
+  /// Function to show error messages to the user
+  void Function(Failure) showError = (_) {};
 
-  /// Function to show errors (can be set from UI layer)
-  void Function(Failure failure)? showError;
+  /// Handles a failure by showing an error message
+  void handleFailure(Failure failure) {
+    showError(failure);
+  }
 
-  /// Process Either result and handle errors automatically
-  T? handleEither<T>(Either<Failure, T> result, {Function(T)? onSuccess}) {
-    return result.fold(
-      (failure) {
-        if (showError != null) {
-          showError!(failure);
-        }
-        return null;
-      },
-      (value) {
-        if (onSuccess != null) {
-          onSuccess(value);
-        }
-        return value;
-      },
-    );
+  /// Handles an Either result, executing success callback on Right
+  /// or showing error on Left
+  void handleEither<T>(
+    Either<Failure, T> either, {
+    required Function(T) onSuccess,
+  }) {
+    either.fold(handleFailure, onSuccess);
   }
 }
 
-/// Singleton instance for easy access
+/// Global instance of the error handler
 final errorHandler = ErrorHandler();
