@@ -12,16 +12,15 @@ class OpenAIService {
   late final OpenAIClient _client;
   final _uuid = Uuid().v4;
 
-  static const _analyzePrompt =
-      '''Analyze this image of a kitchen space and identify:
+  static const _analyzePrompt = '''Analyze the kitchen image(s) and identify:
 1. Ingredients (foods, spices, etc.)
 2. Utensils (pots, pans, cutlery, etc.)
 3. Equipment (appliances, tools, etc.)
 
-Return a list of items with their name, category, and quantity.
+If multiple images are provided, combine all items into a single comprehensive list.
 The quantity should be a number, not a string.
 
-The response must be in this exact JSON format:
+The response must be in this exact JSON format without any markdown formatting or code tags:
 {
   "items": [
     {
@@ -30,7 +29,9 @@ The response must be in this exact JSON format:
       "quantity": 1
     }
   ]
-}''';
+}
+
+Important: Return only the raw JSON with no additional text, no ```json tags, and no formatting.''';
 
   OpenAIService() {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
@@ -40,17 +41,40 @@ The response must be in this exact JSON format:
     _client = OpenAIClient(apiKey: apiKey);
   }
 
-  /// Analyzes an image of kitchen inventory and returns a list of identified items
+  /// Analyzes kitchen inventory images and returns a list of identified items
   ///
-  /// [imagePath] is the path to the image file to analyze
+  /// [imagePaths] is a list of paths to image files to analyze
   /// Returns Either a Failure or a list of [KitchenItem] objects
   Future<Either<Failure, List<KitchenItem>>> analyzeKitchenInventory(
-    String imagePath,
+    List<String> imagePaths,
   ) async {
+    if (imagePaths.isEmpty) {
+      return const Right([]);
+    }
+
     try {
-      final bytes = await File(imagePath).readAsBytes();
-      final base64Image = base64Encode(bytes);
-      final base64Uri = 'data:image/jpeg;base64,$base64Image';
+      final imageParts = <ChatCompletionMessageContentPart>[];
+
+      // Add the prompt
+      imageParts.add(
+        ChatCompletionMessageContentPart.text(text: _analyzePrompt),
+      );
+
+      // Add each image as a part (up to 10 images max)
+      final limitedPaths = imagePaths.take(10).toList();
+      print("limitedPaths length: ${limitedPaths.length}");
+
+      for (final path in limitedPaths) {
+        final bytes = await File(path).readAsBytes();
+        final base64Image = base64Encode(bytes);
+        final base64Uri = 'data:image/jpeg;base64,$base64Image';
+
+        imageParts.add(
+          ChatCompletionMessageContentPart.image(
+            imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
+          ),
+        );
+      }
 
       final response = await _client.createChatCompletion(
         request: CreateChatCompletionRequest(
@@ -58,15 +82,10 @@ The response must be in this exact JSON format:
           messages: [
             ChatCompletionMessage.system(
               content:
-                  'You are a helpful assistant that analyzes kitchen images and returns data in strict JSON format. Always include an "items" array in your response, even if empty.',
+                  'You are a helpful assistant that analyzes kitchen images and returns data in strict JSON format. Always include an "items" array in your response, even if empty. Never include markdown formatting, code block tags, or any text outside the JSON object.',
             ),
             ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.parts([
-                ChatCompletionMessageContentPart.text(text: _analyzePrompt),
-                ChatCompletionMessageContentPart.image(
-                  imageUrl: ChatCompletionMessageImageUrl(url: base64Uri),
-                ),
-              ]),
+              content: ChatCompletionUserMessageContent.parts(imageParts),
             ),
           ],
         ),
@@ -77,7 +96,9 @@ The response must be in this exact JSON format:
         return Left(OpenAIEmptyResponseFailure());
       }
 
-      return _parseResponse(content);
+      // Clean any potential markdown or code tags that might have slipped through
+      final cleanedContent = _cleanJsonContent(content);
+      return _parseResponse(cleanedContent);
     } on SocketException {
       return Left(OpenAIConnectionFailure());
     } on HttpException catch (e) {
@@ -89,6 +110,22 @@ The response must be in this exact JSON format:
     } catch (e) {
       return Left(OpenAIRequestFailure(e.toString()));
     }
+  }
+
+  /// Cleans the content to ensure it's valid JSON without markdown or code tags
+  String _cleanJsonContent(String content) {
+    // Remove markdown code block markers if present
+    String cleaned = content;
+
+    // Remove ```json and ``` markers
+    cleaned = cleaned.replaceAll(RegExp(r'```json\s*'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'```\s*$'), '');
+    cleaned = cleaned.replaceAll('```', '');
+
+    // Remove any leading/trailing whitespace
+    cleaned = cleaned.trim();
+
+    return cleaned;
   }
 
   /// Parses the OpenAI response and converts it to a list of KitchenItems

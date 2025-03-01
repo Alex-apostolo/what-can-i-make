@@ -47,22 +47,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickImages(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      final image = await _picker.pickImage(source: source);
+      if (image == null) return;
+
+      setState(() => _isLoading = true);
+      await _processImages([image.path]);
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    // For gallery, pick multiple images
     final images = await _picker.pickMultiImage();
     if (images.isEmpty) return;
 
     setState(() => _isLoading = true);
 
-    // Process images sequentially
-    for (final image in images) {
-      await _processImage(image.path);
-    }
+    // Process all images at once
+    final imagePaths = images.map((image) => image.path).toList();
+    await _processImages(imagePaths);
 
     setState(() => _isLoading = false);
-    return;
   }
 
-  Future<void> _processImage(String imagePath) async {
-    final result = await _openAIService.analyzeKitchenInventory(imagePath);
+  Future<void> _processImages(List<String> imagePaths) async {
+    final result = await _openAIService.analyzeKitchenInventory(imagePaths);
 
     errorHandler.handleEither(
       result,
