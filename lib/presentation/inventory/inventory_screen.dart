@@ -140,13 +140,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           onEdit: _showEditDialog,
                           onDelete: _inventoryService.deleteItem,
                         )
-                        : EmptyState(onAddPressed: _showAddDialog),
+                        : EmptyState(
+                          onAddPressed: _showAddDialog,
+                          onScanPressed: _showImagePicker,
+                        ),
               ),
-      floatingActionButton: StyledFab(
+      floatingActionButton: hasItems ? StyledFab(
         onPressed: _showImagePicker,
         icon: Icons.add_a_photo_rounded,
         tooltip: 'Scan items with camera',
-      ),
+      ) : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
