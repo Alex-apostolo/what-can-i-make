@@ -10,6 +10,7 @@ import 'components/empty_state.dart';
 import 'components/loading_indicator.dart';
 import 'components/inventory_list.dart';
 import 'dialogs/image_picker_bottom_sheet.dart';
+import '../shared/styled_fab.dart';
 
 class InventoryScreen extends StatefulWidget {
   final StorageRepository storageRepository;
@@ -81,9 +82,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showImagePicker() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder:
-          (context) =>
-              ImagePickerBottomSheet(onImageSourceSelected: _pickImages),
+          (context) => ImagePickerBottomSheet(
+            onCameraTap: () {
+              Navigator.pop(context);
+              _pickImages(ImageSource.camera);
+            },
+            onGalleryTap: () {
+              Navigator.pop(context);
+              _pickImages(ImageSource.gallery);
+            },
+          ),
     );
   }
 
@@ -131,14 +142,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         )
                         : EmptyState(onAddPressed: _showAddDialog),
               ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 10.0),
-        child: FloatingActionButton(
-          onPressed: _showImagePicker,
-          tooltip: 'Scan items with camera',
-          backgroundColor: const Color(0xFF64B5F6),
-          child: const Icon(Icons.add_a_photo, color: Colors.white),
-        ),
+      floatingActionButton: StyledFab(
+        onPressed: _showImagePicker,
+        icon: Icons.add_a_photo_rounded,
+        tooltip: 'Scan items with camera',
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
