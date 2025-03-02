@@ -83,7 +83,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder:
           (context) => ImagePickerBottomSheet(
             onCameraTap: () {

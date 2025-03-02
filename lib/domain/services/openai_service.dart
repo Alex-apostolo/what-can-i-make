@@ -14,24 +14,47 @@ class OpenAIService {
   // Maximum number of images to process in a single request
   static const int _maxImagesPerRequest = 3;
 
-  static const _analyzePrompt =
-      '''Analyze the kitchen image(s) and identify only ingredients (foods, spices, etc.).
+  static const _analyzePrompt = '''
+Analyze the given image of a refrigerator and extract details in JSON format. Your response should contain a single key: `"ingredients"`, which holds a list of objects. Each object should represent an ingredient and include the following keys:  
 
-If multiple images are provided, combine all ingredients into a single comprehensive list.
-The quantity should be a number, not a string.
+- `"name"`: The specific name of the ingredient (e.g., `"Whole Milk"`, `"Cherry Tomato"`, `"Ground Beef"`, `"Cheddar Cheese"`, `"Strawberry Yogurt"`). Avoid general terms like `"Fruits"`, `"Vegetables"`, or `"Desserts"`.  
+- `"brand"`: The brand of the product if visible (e.g., `"Tropicana"`, `"Peroni"`, `"Heinz"`). If the brand is not visible, return `"Unknown"`.  
+- `"quantity"`: A numerical value representing the amount of the ingredient. If the quantity is unclear, return `0`.  
+- `"unit"`: The unit of measurement for the ingredient (e.g., `"pieces"`, `"g"`, `"kg"`, `"ml"`, `"L"`, `"tbsp"`, `"tsp"`, `"cups"`). If the unit is unclear, return `"Unknown"`.  
 
-The response must be in this exact JSON format without any markdown formatting or code tags:
+Ensure the JSON is properly formatted and contains only relevant data from the image. Example response format:  
+
 {
-  "items": [
+  "ingredients": [
     {
-      "name": "item name",
-      "quantity": 1,
-      "unit": "piece/g/kg/ml/l/tbsp/tsp"
+      "name": "Whole Milk",
+      "brand": "DairyPure",
+      "quantity": 2,
+      "unit": "L"
+    },
+    {
+      "name": "Cherry Tomatoes",
+      "brand": "Unknown",
+      "quantity": 200,
+      "unit": "g"
+    },
+    {
+      "name": "Cheddar Cheese",
+      "brand": "Kraft",
+      "quantity": 500,
+      "unit": "g"
+    },
+    {
+      "name": "Strawberry Yogurt",
+      "brand": "Chobani",
+      "quantity": 4,
+      "unit": "cups"
     }
   ]
 }
 
-Important: Return only the raw JSON with no additional text, no ```json tags, and no formatting.''';
+This ensures structured, detailed outputs while avoiding vague or generalized ingredient names.
+''';
 
   OpenAIService() {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
@@ -111,6 +134,7 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
       final response = await _sendApiRequest(imageParts);
 
       final content = response.choices.first.message.content;
+      print("content: $content");
       if (content == null) {
         return Left(OpenAIEmptyResponseFailure());
       }
@@ -161,7 +185,7 @@ Important: Return only the raw JSON with no additional text, no ```json tags, an
   ) {
     return _client.createChatCompletion(
       request: CreateChatCompletionRequest(
-        model: ChatCompletionModel.modelId('gpt-4-turbo'),
+        model: ChatCompletionModel.modelId('gpt-4o'),
         messages: [
           ChatCompletionMessage.system(
             content:
