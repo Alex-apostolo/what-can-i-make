@@ -39,7 +39,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
     if (_formKey.currentState!.validate()) {
       final updatedItem = widget.item.copyWith(
         name: _nameController.text,
-        quantity: double.parse(_quantityController.text),
+        quantity: int.parse(_quantityController.text),
         unit: _unitController.text,
       );
 

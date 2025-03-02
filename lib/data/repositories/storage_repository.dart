@@ -32,7 +32,8 @@ class StorageRepository {
           CREATE TABLE ingredients(
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
-            quantity REAL NOT NULL,
+            quantity INTEGER NOT NULL,
+            brand TEXT,
             unit TEXT NOT NULL
           )
         ''');

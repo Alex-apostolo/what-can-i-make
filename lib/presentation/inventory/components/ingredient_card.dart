@@ -25,26 +25,14 @@ class IngredientCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left color accent
-              Container(
-                width: 4,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              
-              const SizedBox(width: 16),
-              
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
                       ingredient.name,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -53,44 +41,56 @@ class IngredientCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-
-                    const SizedBox(height: 8.0),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10.0,
-                        vertical: 4.0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Text(
-                        '${ingredient.quantity} ${ingredient.unit}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Actions
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.edit_outlined, color: colorScheme.primary),
-                    onPressed: () => onEdit(ingredient),
-                    tooltip: 'Edit',
                   ),
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                    onPressed: () => onDelete(ingredient),
-                    tooltip: 'Delete',
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.edit_outlined,
+                          color: colorScheme.primary,
+                        ),
+                        onPressed: () => onEdit(ingredient),
+                        tooltip: 'Edit',
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.delete_outline,
+                          color: colorScheme.error,
+                        ),
+                        onPressed: () => onDelete(ingredient),
+                        tooltip: 'Delete',
+                      ),
+                    ],
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              if (ingredient.brand != null &&
+                  ingredient.brand!.toLowerCase() != "unknown" &&
+                  ingredient.brand!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    "Brand: ${ingredient.brand}",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 4.0,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Text(
+                  '${ingredient.quantity} ${ingredient.unit}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),

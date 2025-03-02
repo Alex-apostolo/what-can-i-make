@@ -14,6 +14,7 @@ class AddItemDialog extends StatefulWidget {
 class _AddItemDialogState extends State<AddItemDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _brandController = TextEditingController();
   final _quantityController = TextEditingController();
   final _unitController = TextEditingController();
 
@@ -27,6 +28,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
   @override
   void dispose() {
     _nameController.dispose();
+    _brandController.dispose();
     _quantityController.dispose();
     _unitController.dispose();
     super.dispose();
@@ -34,10 +36,12 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
   void _handleAdd() {
     if (_formKey.currentState!.validate()) {
+      final int quantity = int.tryParse(_quantityController.text) ?? 0;
       final newItem = Ingredient(
         id: generateUniqueId(),
         name: _nameController.text,
-        quantity: double.parse(_quantityController.text),
+        brand: _brandController.text.isEmpty ? null : _brandController.text,
+        quantity: quantity,
         unit: _unitController.text,
       );
 
@@ -77,29 +81,34 @@ class _AddItemDialogState extends State<AddItemDialog> {
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 16),
+              TextFormField(
+                controller: _brandController,
+                decoration: const InputDecoration(
+                  labelText: 'Brand (optional)',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _quantityController,
+                decoration: const InputDecoration(
+                  labelText: 'Quantity',
+                  prefixIcon: Icon(Icons.numbers),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Required';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Invalid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _quantityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Quantity',
-                        prefixIcon: Icon(Icons.numbers),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Invalid number';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
                   Expanded(
                     flex: 3,
                     child: TextFormField(

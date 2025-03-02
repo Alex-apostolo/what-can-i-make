@@ -218,23 +218,40 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
       // Parse the JSON string into a Map
       final Map<String, dynamic> jsonData = jsonDecode(content);
 
-      // Extract the "items" list from the JSON object
-      final List<dynamic> items = jsonData['items'] ?? [];
+      // Extract the "ingredients" list from the JSON object
+      final List<dynamic> ingredients = jsonData['ingredients'] ?? [];
 
-      final ingredients =
-          items.map<Ingredient>((item) {
+      final parsedIngredients =
+          ingredients.map<Ingredient>((item) {
+            // Handle quantity - ensure it's an integer
+            int quantity = 0;
+            if (item['quantity'] != null) {
+              if (item['quantity'] is int) {
+                quantity = item['quantity'];
+              } else if (item['quantity'] is double) {
+                quantity = item['quantity'].toInt();
+              } else if (item['quantity'] is String) {
+                quantity = int.tryParse(item['quantity']) ?? 0;
+              }
+            }
+
+            // Handle brand - set to null if "unknown"
+            String? brand = item['brand'];
+            if (brand != null &&
+                (brand.isEmpty || brand.toLowerCase() == 'unknown')) {
+              brand = null;
+            }
+
             return Ingredient(
               id: generateUniqueId(),
-              name: item['name'],
-              quantity:
-                  (item['quantity'] is int)
-                      ? (item['quantity'] as int).toDouble()
-                      : item['quantity'],
+              name: item['name'] ?? '',
+              brand: brand,
+              quantity: quantity,
               unit: item['unit'] ?? 'piece',
             );
           }).toList();
 
-      return Right(ingredients);
+      return Right(parsedIngredients);
     } on FormatException catch (e) {
       return Left(ParsingFailure('JSON format error: ${e.message}', content));
     } on TypeError catch (e) {
