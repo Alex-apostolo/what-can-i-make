@@ -1,6 +1,6 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
-import 'openai_service.dart';
+import 'food_image_analyzer.dart';
 import '../../data/repositories/storage_repository.dart';
 import '../../core/error/error_handler.dart';
 
@@ -11,7 +11,7 @@ class ImageService {
 
   // Services
   final ImagePicker _picker = ImagePicker();
-  final OpenAIService _openAIService = OpenAIService();
+  final FoodImageAnalyzer _foodImageAnalyzer = FoodImageAnalyzer();
   final StorageRepository _storageRepository;
 
   // Callback for when inventory changes
@@ -97,7 +97,7 @@ class ImageService {
 
   /// Processes images through OpenAI and saves results
   Future<void> _processImages(List<String> imagePaths) async {
-    final result = await _openAIService.analyzeKitchenInventory(imagePaths);
+    final result = await _foodImageAnalyzer.analyzeInventory(imagePaths);
 
     errorHandler.handleEither(
       result,
@@ -113,6 +113,6 @@ class ImageService {
 
   /// Disposes resources
   void dispose() {
-    _openAIService.dispose();
+    _foodImageAnalyzer.dispose();
   }
 }

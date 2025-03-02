@@ -10,8 +10,8 @@ import 'package:dartz/dartz.dart';
 import '../../core/error/failures/failure.dart';
 import '../../core/utils/generate_unique_id.dart';
 
-/// Service to handle OpenAI API interactions for ingredient analysis
-class OpenAIService {
+/// Service to analyze food images and extract ingredients using OpenAI
+class FoodImageAnalyzer {
   late final OpenAIClient _client;
 
   // Maximum number of images to process in a single request
@@ -85,26 +85,22 @@ Ensure the JSON is properly formatted and contains only relevant data from the i
     {
       "name": "Whole Milk",
       "quantity": 2,
-      "unit": "L",
-      "category": "Dairy & Eggs"
+      "unit": "L"
     },
     {
       "name": "Cherry Tomatoes",
       "quantity": 200,
-      "unit": "g",
-      "category": "Vegetables"
+      "unit": "g"
     },
     {
       "name": "Cheddar Cheese",
       "quantity": 500,
-      "unit": "g",
-      "category": "Dairy & Eggs"
+      "unit": "g"
     },
     {
       "name": "Strawberry Yogurt",
       "quantity": 4,
-      "unit": "cups",
-      "category": "Dairy & Eggs"
+      "unit": "cups"
     }
   ]
 }
@@ -112,14 +108,7 @@ Ensure the JSON is properly formatted and contains only relevant data from the i
 This ensures structured, detailed outputs while avoiding vague or generalized ingredient names.
 ''';
 
-  static const _categorizePrompt = '''
-Categorize the given ingredient into one of the following categories:
-$CATEGORY_PROMPT
-
-Return only the category name, nothing else.
-''';
-
-  OpenAIService() {
+  FoodImageAnalyzer() {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
     if (apiKey == null) {
       throw Exception('OpenAI API key not found in .env file');
@@ -127,53 +116,11 @@ Return only the category name, nothing else.
     _client = OpenAIClient(apiKey: apiKey);
   }
 
-  /// Categorizes an ingredient using OpenAI
-  ///
-  /// [ingredientName] is the name of the ingredient to categorize
-  /// Returns Either a Failure or an IngredientCategory
-  Future<Either<Failure, IngredientCategory>> categorizeIngredient(
-    String ingredientName,
-  ) async {
-    try {
-      final response = await _client.createChatCompletion(
-        request: CreateChatCompletionRequest(
-          model: ChatCompletionModel.modelId('gpt-4o'),
-          messages: [
-            ChatCompletionMessage.system(
-              content:
-                  'You are a helpful assistant that categorizes food ingredients. Return only the category name, nothing else.',
-            ),
-            ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.string(
-                '$_categorizePrompt\n\nIngredient: $ingredientName',
-              ),
-            ),
-          ],
-        ),
-      );
-
-      final content = response.choices.first.message.content;
-      if (content == null) {
-        return Left(OpenAIRequestFailure('Empty response from OpenAI'));
-      }
-
-      // Clean up the response (remove quotes, trim whitespace)
-      final cleanedContent =
-          content.replaceAll('"', '').replaceAll("'", '').trim();
-
-      // Convert to IngredientCategory
-      final category = IngredientCategory.fromString(cleanedContent);
-      return Right(category);
-    } catch (e) {
-      return Left(OpenAIRequestFailure(e.toString()));
-    }
-  }
-
   /// Analyzes kitchen inventory images and returns a list of identified ingredients
   ///
   /// [imagePaths] is a list of paths to image files to analyze
   /// Returns Either a Failure or a list of [Ingredient] objects
-  Future<Either<Failure, List<Ingredient>>> analyzeKitchenInventory(
+  Future<Either<Failure, List<Ingredient>>> analyzeInventory(
     List<String> imagePaths,
   ) async {
     if (imagePaths.isEmpty) {
@@ -214,23 +161,26 @@ Return only the category name, nothing else.
   Either<Failure, List<Ingredient>> _combineResults(
     List<Either<Failure, List<Ingredient>>> results,
   ) {
-    final allItems = <Ingredient>[];
+    final allIngredients = <Ingredient>[];
+    final failures = <Failure>[];
 
     for (final result in results) {
-      if (result.isLeft()) {
-        // Return the first error encountered
-        return result;
-      }
-
-      // Extract items from the successful result
-      final items = result.getOrElse(() => []);
-      allItems.addAll(items);
+      result.fold(
+        (failure) => failures.add(failure),
+        (ingredients) => allIngredients.addAll(ingredients),
+      );
     }
 
-    return Right(allItems);
+    // If all batches failed, return the first failure
+    if (allIngredients.isEmpty && failures.isNotEmpty) {
+      return Left(failures.first);
+    }
+
+    // Otherwise return all successfully parsed ingredients
+    return Right(allIngredients);
   }
 
-  /// Processes a batch of images (up to _maxImagesPerRequest)
+  /// Processes a batch of images
   Future<Either<Failure, List<Ingredient>>> _processBatch(
     List<String> batchPaths,
   ) async {
@@ -244,6 +194,7 @@ Return only the category name, nothing else.
       }
 
       final content = response.choices.first.message.content!;
+      print("content: $content");
       final cleanedContent = _cleanJsonContent(content);
 
       return _parseResponse(cleanedContent);
@@ -291,7 +242,7 @@ Return only the category name, nothing else.
         messages: [
           ChatCompletionMessage.system(
             content:
-                'You are a helpful assistant that analyzes kitchen images and returns data in strict JSON format. Always include an "items" array in your response, even if empty. Never include markdown formatting, code block tags, or any text outside the JSON object.',
+                'You are a helpful assistant that analyzes kitchen images and returns data in strict JSON format. Always include an "ingredients" array in your response, even if empty. Never include markdown formatting, code block tags, or any text outside the JSON object.',
           ),
           ChatCompletionMessage.user(
             content: ChatCompletionUserMessageContent.parts(imageParts),
