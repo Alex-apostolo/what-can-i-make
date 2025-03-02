@@ -8,7 +8,8 @@ import '../../core/error/failures/failure.dart';
 class CategoryService {
   late final OpenAIClient _client;
 
-  static const String CATEGORY_PROMPT = '''
+  // Prompt for categorizing ingredients
+  static const String categoryPrompt = '''
 Categorize the given ingredient into one of the following categories:
 - "Vegetables"
 - "Fruits"
@@ -30,6 +31,7 @@ Categorize the given ingredient into one of the following categories:
 Return only the category name, nothing else.
 ''';
 
+  /// Constructor that initializes the OpenAI client
   CategoryService() {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
     if (apiKey == null) {
@@ -56,7 +58,7 @@ Return only the category name, nothing else.
             ),
             ChatCompletionMessage.user(
               content: ChatCompletionUserMessageContent.string(
-                '$CATEGORY_PROMPT\n\nIngredient: $ingredientName',
+                '$categoryPrompt\n\nIngredient: $ingredientName',
               ),
             ),
           ],

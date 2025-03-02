@@ -17,7 +17,7 @@ class FoodImageAnalyzer {
   // Maximum number of images to process in a single request
   static const int _maxImagesPerRequest = 3;
 
-  static const String UNIT_PROMPT = '''
+  static const String _unitPrompt = '''
 Return one of these exact units (singular or plural form):
 Volume (Metric):
 - "ml" (milliliter/milliliters)
@@ -68,15 +68,15 @@ Produce:
 - "wedge/wedges"
 ''';
 
-  static const String CATEGORY_PROMPT = CategoryService.CATEGORY_PROMPT;
+  static const String _categoryPrompt = CategoryService.categoryPrompt;
 
   static const _analyzePrompt = '''
 Analyze the given image of a refrigerator and extract details in JSON format. Your response should contain a single key: `"ingredients"`, which holds a list of objects. Each object should represent an ingredient and include the following keys:  
 
 - `"name"`: The specific name of the ingredient (e.g., `"Whole Milk"`, `"Cherry Tomato"`, `"Ground Beef"`, `"Cheddar Cheese"`, `"Strawberry Yogurt"`). Avoid general terms like `"Fruits"`, `"Vegetables"`, or `"Desserts"`. IMPORTANT: If brand is visible include it in the name.
 - `"quantity"`: A numerical value representing the amount of the ingredient. If the quantity is unclear, return `0`.  
-- `"unit"`: The unit of measurement for the ingredient, if the unit is unclear return `"Unknown"`. $UNIT_PROMPT
-- `"category"`: The category this ingredient belongs to. $CATEGORY_PROMPT
+- `"unit"`: The unit of measurement for the ingredient, if the unit is unclear return `"Unknown"`. $_unitPrompt
+- `"category"`: The category this ingredient belongs to. $_categoryPrompt
 
 Ensure the JSON is properly formatted and contains only relevant data from the image. Example response format:  
 

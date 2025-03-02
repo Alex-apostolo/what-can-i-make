@@ -17,6 +17,7 @@ class ImageService {
   // Callback for when inventory changes
   final VoidCallback onInventoryChanged;
 
+  /// Constructor that initializes the service
   ImageService({
     required this.onInventoryChanged,
     required StorageRepository storageRepository,
