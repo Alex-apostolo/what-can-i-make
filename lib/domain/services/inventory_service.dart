@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../core/utils/generate_unique_id.dart';
 import '../models/ingredient.dart';
 import '../../data/repositories/storage_repository.dart';
 import '../../core/error/error_handler.dart';
@@ -19,10 +20,19 @@ class InventoryService {
   Future<List<Ingredient>> loadInventory() async {
     final result = await _storageRepository.getInventory();
 
-    return result.fold((failure) {
-      errorHandler.handleFailure(failure);
-      return <Ingredient>[];
-    }, (items) => items);
+    return result.fold(
+      (failure) {
+        errorHandler.handleFailure(failure);
+        return <Ingredient>[];
+      },
+      (items) {
+        items.sort(
+          (a, b) =>
+              getTimestampFromId(b.id).compareTo(getTimestampFromId(a.id)),
+        );
+        return items;
+      },
+    );
   }
 
   /// Updates an existing item

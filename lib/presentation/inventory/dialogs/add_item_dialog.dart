@@ -36,7 +36,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
     if (_formKey.currentState!.validate()) {
       final int quantity = int.tryParse(_quantityController.text) ?? 0;
       final newItem = Ingredient(
-        id: generateUniqueId(),
+        id: generateUniqueIdWithTimestamp(),
         name: _nameController.text,
         quantity: quantity,
         unit: MeasurementUnit.fromString(_selectedUnit.label),

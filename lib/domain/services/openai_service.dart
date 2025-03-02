@@ -283,7 +283,7 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
             }
 
             return Ingredient(
-              id: generateUniqueId(),
+              id: generateUniqueIdWithTimestamp(),
               name: item['name'] ?? '',
               quantity: quantity,
               unit: MeasurementUnit.fromString(item['unit'] ?? 'piece'),
