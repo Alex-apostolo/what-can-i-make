@@ -187,7 +187,13 @@ class _EditItemDialogState extends State<EditItemDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.category, color: colorScheme.primary),
+                    Icon(
+                      _nameChanged
+                          ? Icons.category
+                          : widget.ingredient.category.icon,
+                      color: colorScheme.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool hasItems;
@@ -14,21 +15,53 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AppBar(
       elevation: 0,
-      title: const Text('Kitchen Inventory'),
+      scrolledUnderElevation: 2,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FaIcon(
+            FontAwesomeIcons.kitchenSet,
+            color: colorScheme.primary,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Kitchen Inventory',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.titleLarge?.color,
+            ),
+          ),
+        ],
+      ),
+      centerTitle: true,
       actions: [
         if (hasItems)
           IconButton(
-            icon: const Icon(Icons.delete_sweep),
+            icon: const FaIcon(FontAwesomeIcons.trashCan, size: 18),
             tooltip: 'Clear all items',
             onPressed: onClearPressed,
+            style: IconButton.styleFrom(
+              foregroundColor: colorScheme.error,
+              backgroundColor: colorScheme.errorContainer.withOpacity(0.2),
+            ),
           ),
+        const SizedBox(width: 8),
         IconButton(
-          icon: const Icon(Icons.add),
+          icon: const FaIcon(FontAwesomeIcons.circlePlus, size: 18),
           tooltip: 'Add item manually',
           onPressed: onAddPressed,
+          style: IconButton.styleFrom(
+            foregroundColor: colorScheme.primary,
+            backgroundColor: colorScheme.primaryContainer.withOpacity(0.2),
+          ),
         ),
+        const SizedBox(width: 8),
       ],
     );
   }

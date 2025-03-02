@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class EmptyState extends StatelessWidget {
   final VoidCallback onAddPressed;
@@ -9,6 +10,7 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Center(
       child: SingleChildScrollView(
@@ -22,13 +24,43 @@ class EmptyState extends StatelessWidget {
               width: 200,
               height: 200,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.shadow.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
-              child: Icon(
-                Icons.kitchen_rounded,
-                size: 100,
-                color: theme.colorScheme.primary,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  FaIcon(
+                    FontAwesomeIcons.kitchenSet,
+                    size: 80,
+                    color: colorScheme.primary.withOpacity(0.8),
+                  ),
+                  Positioned(
+                    top: 50,
+                    right: 50,
+                    child: FaIcon(
+                      FontAwesomeIcons.utensils,
+                      size: 30,
+                      color: colorScheme.secondary.withOpacity(0.7),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 50,
+                    left: 50,
+                    child: FaIcon(
+                      FontAwesomeIcons.basketShopping,
+                      size: 30,
+                      color: colorScheme.tertiary.withOpacity(0.7),
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -39,7 +71,7 @@ class EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: theme.textTheme.bodyLarge?.color,
+                color: colorScheme.onBackground,
               ),
             ),
 
@@ -49,7 +81,7 @@ class EmptyState extends StatelessWidget {
               'Start adding items to keep track of your kitchen inventory',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.textTheme.bodyLarge?.color?.withOpacity(0.7),
+                color: colorScheme.onBackground.withOpacity(0.7),
               ),
             ),
 
@@ -61,18 +93,18 @@ class EmptyState extends StatelessWidget {
               children: [
                 _ActionButton(
                   onPressed: onAddPressed,
-                  icon: Icons.add_rounded,
+                  icon: FontAwesomeIcons.circlePlus,
                   label: 'Add Item',
-                  color: theme.colorScheme.primary,
+                  color: colorScheme.primary,
                 ),
 
                 if (onScanPressed != null) ...[
                   const SizedBox(width: 16),
                   _ActionButton(
                     onPressed: onScanPressed!,
-                    icon: Icons.camera_alt_rounded,
+                    icon: FontAwesomeIcons.barcode,
                     label: 'Scan Items',
-                    color: theme.colorScheme.secondary,
+                    color: colorScheme.secondary,
                   ),
                 ],
               ],
@@ -112,12 +144,13 @@ class _ActionButton extends StatelessWidget {
         foregroundColor: contrastColor,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 2,
+        elevation: 3,
+        shadowColor: color.withOpacity(0.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: contrastColor),
+          FaIcon(icon, color: contrastColor, size: 16),
           const SizedBox(width: 8),
           Text(
             label,

@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 /// Enum representing ingredient categories for organization
 enum IngredientCategory {
   vegetables('Vegetables', 1),
@@ -21,6 +24,44 @@ enum IngredientCategory {
   final int sortOrder;
 
   const IngredientCategory(this.displayName, this.sortOrder);
+
+  /// Get the icon for this category
+  IconData get icon {
+    switch (this) {
+      case IngredientCategory.vegetables:
+        return FontAwesomeIcons.carrot;
+      case IngredientCategory.fruits:
+        return FontAwesomeIcons.apple;
+      case IngredientCategory.grainsAndLegumes:
+        return FontAwesomeIcons.wheatAwn;
+      case IngredientCategory.meatAndSeafood:
+        return FontAwesomeIcons.fish;
+      case IngredientCategory.dairyAndEggs:
+        return FontAwesomeIcons.cheese;
+      case IngredientCategory.oilsAndFats:
+        return FontAwesomeIcons.oilWell;
+      case IngredientCategory.nutsAndSeeds:
+        return FontAwesomeIcons.seedling;
+      case IngredientCategory.condimentsHerbsAndSpices:
+        return FontAwesomeIcons.pepperHot;
+      case IngredientCategory.sweetenersAndBaking:
+        return FontAwesomeIcons.cakeCandles;
+      case IngredientCategory.beverages:
+        return FontAwesomeIcons.wineGlass;
+      case IngredientCategory.snacksAndDesserts:
+        return FontAwesomeIcons.cookie;
+      case IngredientCategory.preparedFoods:
+        return FontAwesomeIcons.bowlFood;
+      case IngredientCategory.frozen:
+        return FontAwesomeIcons.snowflake;
+      case IngredientCategory.canned:
+        return FontAwesomeIcons.jarWheat;
+      case IngredientCategory.international:
+        return FontAwesomeIcons.earthAmericas;
+      case IngredientCategory.other:
+        return FontAwesomeIcons.ellipsis;
+    }
+  }
 
   /// Convert a string category name to the corresponding enum value
   static IngredientCategory fromString(String categoryName) {
