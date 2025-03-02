@@ -14,7 +14,6 @@ class AddItemDialog extends StatefulWidget {
 class _AddItemDialogState extends State<AddItemDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _brandController = TextEditingController();
   final _quantityController = TextEditingController();
   final _unitController = TextEditingController();
 
@@ -28,7 +27,6 @@ class _AddItemDialogState extends State<AddItemDialog> {
   @override
   void dispose() {
     _nameController.dispose();
-    _brandController.dispose();
     _quantityController.dispose();
     _unitController.dispose();
     super.dispose();
@@ -40,7 +38,6 @@ class _AddItemDialogState extends State<AddItemDialog> {
       final newItem = Ingredient(
         id: generateUniqueId(),
         name: _nameController.text,
-        brand: _brandController.text.isEmpty ? null : _brandController.text,
         quantity: quantity,
         unit: _unitController.text,
       );
@@ -78,14 +75,6 @@ class _AddItemDialogState extends State<AddItemDialog> {
                   }
                   return null;
                 },
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _brandController,
-                decoration: const InputDecoration(
-                  labelText: 'Brand (optional)',
-                ),
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 16),

@@ -33,7 +33,6 @@ class StorageRepository {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             quantity INTEGER NOT NULL,
-            brand TEXT,
             unit TEXT NOT NULL
           )
         ''');

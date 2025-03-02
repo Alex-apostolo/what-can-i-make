@@ -17,8 +17,7 @@ class OpenAIService {
   static const _analyzePrompt = '''
 Analyze the given image of a refrigerator and extract details in JSON format. Your response should contain a single key: `"ingredients"`, which holds a list of objects. Each object should represent an ingredient and include the following keys:  
 
-- `"name"`: The specific name of the ingredient (e.g., `"Whole Milk"`, `"Cherry Tomato"`, `"Ground Beef"`, `"Cheddar Cheese"`, `"Strawberry Yogurt"`). Avoid general terms like `"Fruits"`, `"Vegetables"`, or `"Desserts"`.  
-- `"brand"`: The brand of the product if visible (e.g., `"Tropicana"`, `"Peroni"`, `"Heinz"`). If the brand is not visible, return `"Unknown"`.  
+- `"name"`: The specific name of the ingredient (e.g., `"Whole Milk"`, `"Cherry Tomato"`, `"Ground Beef"`, `"Cheddar Cheese"`, `"Strawberry Yogurt"`). Avoid general terms like `"Fruits"`, `"Vegetables"`, or `"Desserts"`. IMPORTANT: If brand is visible include it in the name.
 - `"quantity"`: A numerical value representing the amount of the ingredient. If the quantity is unclear, return `0`.  
 - `"unit"`: The unit of measurement for the ingredient (e.g., `"pieces"`, `"g"`, `"kg"`, `"ml"`, `"L"`, `"tbsp"`, `"tsp"`, `"cups"`). If the unit is unclear, return `"Unknown"`.  
 
@@ -28,25 +27,21 @@ Ensure the JSON is properly formatted and contains only relevant data from the i
   "ingredients": [
     {
       "name": "Whole Milk",
-      "brand": "DairyPure",
       "quantity": 2,
       "unit": "L"
     },
     {
       "name": "Cherry Tomatoes",
-      "brand": "Unknown",
       "quantity": 200,
       "unit": "g"
     },
     {
       "name": "Cheddar Cheese",
-      "brand": "Kraft",
       "quantity": 500,
       "unit": "g"
     },
     {
       "name": "Strawberry Yogurt",
-      "brand": "Chobani",
       "quantity": 4,
       "unit": "cups"
     }
@@ -235,17 +230,9 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
               }
             }
 
-            // Handle brand - set to null if "unknown"
-            String? brand = item['brand'];
-            if (brand != null &&
-                (brand.isEmpty || brand.toLowerCase() == 'unknown')) {
-              brand = null;
-            }
-
             return Ingredient(
               id: generateUniqueId(),
               name: item['name'] ?? '',
-              brand: brand,
               quantity: quantity,
               unit: item['unit'] ?? 'piece',
             );
