@@ -12,7 +12,8 @@ class DialogHelper {
   ) {
     return showDialog(
       context: context,
-      builder: (dialogContext) => EditItemDialog(item: item, onSave: onSave),
+      builder:
+          (dialogContext) => EditItemDialog(ingredient: item, onEdit: onSave),
     );
   }
 

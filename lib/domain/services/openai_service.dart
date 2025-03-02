@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:what_can_i_make/domain/models/measurement_unit.dart';
 import '../models/ingredient.dart';
 import 'package:dartz/dartz.dart';
 import '../../core/error/failures/failure.dart';
@@ -14,12 +15,63 @@ class OpenAIService {
   // Maximum number of images to process in a single request
   static const int _maxImagesPerRequest = 3;
 
+  static const String UNIT_PROMPT = '''
+Return one of these exact units (singular or plural form):
+Volume (Metric):
+- "ml" (milliliter/milliliters)
+- "L" (liter/liters)
+
+Volume (Imperial):
+- "tsp" (teaspoon/teaspoons)
+- "tbsp" (tablespoon/tablespoons)
+- "fl oz" (fluid ounce/fluid ounces)
+- "cup/cups"
+- "pt" (pint/pints)
+- "qt" (quart/quarts)
+- "gal" (gallon/gallons)
+
+Weight (Metric):
+- "g" (gram/grams)
+- "kg" (kilogram/kilograms)
+
+Weight (Imperial):
+- "oz" (ounce/ounces)
+- "lb" (pound/pounds)
+
+Count/Whole:
+- "piece/pieces"
+- "dozen/dozens"
+- "pair/pairs"
+
+Packaging:
+- "can/cans"
+- "bottle/bottles"
+- "box/boxes"
+- "package/packages"
+- "bag/bags"
+- "carton/cartons"
+- "container/containers"
+- "jar/jars"
+- "tube/tubes"
+- "tin/tins"
+- "bowl/bowls"
+
+Produce:
+- "bunch/bunches"
+- "head/heads"
+- "clove/cloves"
+- "sprig/sprigs"
+- "stalk/stalks"
+- "slice/slices"
+- "wedge/wedges"
+''';
+
   static const _analyzePrompt = '''
 Analyze the given image of a refrigerator and extract details in JSON format. Your response should contain a single key: `"ingredients"`, which holds a list of objects. Each object should represent an ingredient and include the following keys:  
 
 - `"name"`: The specific name of the ingredient (e.g., `"Whole Milk"`, `"Cherry Tomato"`, `"Ground Beef"`, `"Cheddar Cheese"`, `"Strawberry Yogurt"`). Avoid general terms like `"Fruits"`, `"Vegetables"`, or `"Desserts"`. IMPORTANT: If brand is visible include it in the name.
 - `"quantity"`: A numerical value representing the amount of the ingredient. If the quantity is unclear, return `0`.  
-- `"unit"`: The unit of measurement for the ingredient (e.g., `"pieces"`, `"g"`, `"kg"`, `"ml"`, `"L"`, `"tbsp"`, `"tsp"`, `"cups"`). If the unit is unclear, return `"Unknown"`.  
+- `"unit"`: The unit of measurement for the ingredient, if the unit is unclear return `"Unknown"`. $UNIT_PROMPT
 
 Ensure the JSON is properly formatted and contains only relevant data from the image. Example response format:  
 
@@ -234,7 +286,7 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
               id: generateUniqueId(),
               name: item['name'] ?? '',
               quantity: quantity,
-              unit: item['unit'] ?? 'piece',
+              unit: MeasurementUnit.fromString(item['unit'] ?? 'piece'),
             );
           }).toList();
 

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/ingredient.dart';
+import '../../../domain/models/measurement_unit.dart';
 
 class EditItemDialog extends StatefulWidget {
-  final Ingredient item;
-  final Function(Ingredient) onSave;
+  final Ingredient ingredient;
+  final Function(Ingredient) onEdit;
 
-  const EditItemDialog({super.key, required this.item, required this.onSave});
+  const EditItemDialog({
+    super.key,
+    required this.ingredient,
+    required this.onEdit,
+  });
 
   @override
   State<EditItemDialog> createState() => _EditItemDialogState();
@@ -15,43 +20,49 @@ class _EditItemDialogState extends State<EditItemDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _quantityController;
-  late final TextEditingController _unitController;
+  late MeasurementUnit _selectedUnit;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.item.name);
+    _nameController = TextEditingController(text: widget.ingredient.name);
     _quantityController = TextEditingController(
-      text: widget.item.quantity.toString(),
+      text: widget.ingredient.quantity.toString(),
     );
-    _unitController = TextEditingController(text: widget.item.unit);
+    _selectedUnit = widget.ingredient.unit;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
-    _unitController.dispose();
     super.dispose();
   }
 
-  void _handleSave() {
+  void _handleEdit() {
     if (_formKey.currentState!.validate()) {
-      final updatedItem = widget.item.copyWith(
+      final int quantity = int.tryParse(_quantityController.text) ?? 0;
+      final updatedItem = widget.ingredient.copyWith(
         name: _nameController.text,
-        quantity: int.parse(_quantityController.text),
-        unit: _unitController.text,
+        quantity: quantity,
+        unit: _selectedUnit,
       );
 
-      widget.onSave(updatedItem);
+      widget.onEdit(updatedItem);
       Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AlertDialog(
-      title: const Text('Edit Ingredient'),
+      title: Text(
+        'Edit Ingredient',
+        style: TextStyle(color: colorScheme.primary),
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -60,49 +71,61 @@ class _EditItemDialogState extends State<EditItemDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  prefixIcon: Icon(Icons.restaurant),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a name';
                   }
                   return null;
                 },
+                textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _quantityController,
-                      decoration: const InputDecoration(labelText: 'Quantity'),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Invalid number';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 3,
-                    child: TextFormField(
-                      controller: _unitController,
-                      decoration: const InputDecoration(labelText: 'Unit'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _quantityController,
+                decoration: const InputDecoration(
+                  labelText: 'Quantity',
+                  prefixIcon: Icon(Icons.numbers),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Required';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Invalid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<MeasurementUnit>(
+                value: _selectedUnit,
+                decoration: const InputDecoration(
+                  labelText: 'Unit',
+                  prefixIcon: Icon(Icons.scale),
+                ),
+                items:
+                    MeasurementUnit.values.map((unit) {
+                      return DropdownMenuItem<MeasurementUnit>(
+                        value: unit,
+                        child: Text(unit.displayName),
+                      );
+                    }).toList(),
+                onChanged: (MeasurementUnit? newValue) {
+                  setState(() {
+                    _selectedUnit = newValue ?? MeasurementUnit.piece;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Required';
+                  }
+                  return null;
+                },
               ),
             ],
           ),
@@ -111,9 +134,16 @@ class _EditItemDialogState extends State<EditItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('CANCEL'),
+          child: Text('CANCEL', style: TextStyle(color: colorScheme.secondary)),
         ),
-        TextButton(onPressed: _handleSave, child: const Text('SAVE')),
+        ElevatedButton(
+          onPressed: _handleEdit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+          ),
+          child: const Text('SAVE'),
+        ),
       ],
     );
   }

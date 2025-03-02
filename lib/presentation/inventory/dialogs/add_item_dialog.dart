@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/ingredient.dart';
 import '../../../core/utils/generate_unique_id.dart';
+import '../../../domain/models/measurement_unit.dart';
 
 class AddItemDialog extends StatefulWidget {
   final Function(Ingredient) onAdd;
@@ -15,20 +16,19 @@ class _AddItemDialogState extends State<AddItemDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _quantityController = TextEditingController();
-  final _unitController = TextEditingController();
+  MeasurementUnit _selectedUnit = MeasurementUnit.piece;
 
   @override
   void initState() {
     super.initState();
     // Set default unit
-    _unitController.text = 'piece';
+    _selectedUnit = MeasurementUnit.piece;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
-    _unitController.dispose();
     super.dispose();
   }
 
@@ -39,7 +39,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
         id: generateUniqueId(),
         name: _nameController.text,
         quantity: quantity,
-        unit: _unitController.text,
+        unit: MeasurementUnit.fromString(_selectedUnit.label),
       );
 
       widget.onAdd(newItem);
@@ -96,25 +96,30 @@ class _AddItemDialogState extends State<AddItemDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextFormField(
-                      controller: _unitController,
-                      decoration: const InputDecoration(
-                        labelText: 'Unit',
-                        prefixIcon: Icon(Icons.scale),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
+              DropdownButtonFormField<MeasurementUnit>(
+                value: _selectedUnit,
+                decoration: const InputDecoration(
+                  labelText: 'Unit',
+                  prefixIcon: Icon(Icons.scale),
+                ),
+                items:
+                    MeasurementUnit.values.map((unit) {
+                      return DropdownMenuItem<MeasurementUnit>(
+                        value: unit,
+                        child: Text(unit.displayName),
+                      );
+                    }).toList(),
+                onChanged: (MeasurementUnit? newValue) {
+                  setState(() {
+                    _selectedUnit = newValue ?? MeasurementUnit.piece;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Required';
+                  }
+                  return null;
+                },
               ),
             ],
           ),

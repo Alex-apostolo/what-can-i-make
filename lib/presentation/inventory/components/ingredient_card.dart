@@ -107,7 +107,7 @@ class IngredientCard extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  '${ingredient.quantity} ${ingredient.unit}',
+                  '${ingredient.quantity} ${ingredient.unitLabel}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.w600,

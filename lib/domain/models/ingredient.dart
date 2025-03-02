@@ -1,8 +1,10 @@
+import 'measurement_unit.dart';
+
 class Ingredient {
   final String id;
   final String name;
   final int quantity;
-  final String unit;
+  final MeasurementUnit unit;
 
   const Ingredient({
     required this.id,
@@ -11,7 +13,22 @@ class Ingredient {
     required this.unit,
   });
 
-  Ingredient copyWith({String? id, String? name, int? quantity, String? unit}) {
+  /// Get the appropriate unit label based on quantity
+  String get unitLabel {
+    // For quantities of 1, use singular form
+    if (quantity == 1) {
+      return unit.label;
+    }
+    // For quantities other than 1, use plural form
+    return unit.plural;
+  }
+
+  Ingredient copyWith({
+    String? id,
+    String? name,
+    int? quantity,
+    MeasurementUnit? unit,
+  }) {
     return Ingredient(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -21,7 +38,7 @@ class Ingredient {
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'quantity': quantity, 'unit': unit};
+    return {'id': id, 'name': name, 'quantity': quantity, 'unit': unit.label};
   }
 
   factory Ingredient.fromJson(Map<String, dynamic> json) {
@@ -29,7 +46,7 @@ class Ingredient {
       id: json['id'],
       name: json['name'],
       quantity: json['quantity'],
-      unit: json['unit'],
+      unit: MeasurementUnit.fromString(json['unit'] ?? 'piece'),
     );
   }
 
