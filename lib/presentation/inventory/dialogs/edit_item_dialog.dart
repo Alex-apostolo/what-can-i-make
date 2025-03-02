@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/ingredient.dart';
 import '../../../domain/models/measurement_unit.dart';
+import '../../../domain/models/ingredient_category.dart';
+import '../../../domain/services/openai_service.dart';
+import '../../../core/error/error_handler.dart';
 
 class EditItemDialog extends StatefulWidget {
   final Ingredient ingredient;
@@ -21,6 +24,9 @@ class _EditItemDialogState extends State<EditItemDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _quantityController;
   late MeasurementUnit _selectedUnit;
+  bool _isLoading = false;
+  bool _nameChanged = false;
+  final _openAIService = OpenAIService();
 
   @override
   void initState() {
@@ -30,22 +36,52 @@ class _EditItemDialogState extends State<EditItemDialog> {
       text: widget.ingredient.quantity.toString(),
     );
     _selectedUnit = widget.ingredient.unit;
+
+    // Listen for name changes to trigger recategorization
+    _nameController.addListener(() {
+      if (_nameController.text != widget.ingredient.name) {
+        setState(() => _nameChanged = true);
+      } else {
+        setState(() => _nameChanged = false);
+      }
+    });
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
+    _openAIService.dispose();
     super.dispose();
   }
 
-  void _handleEdit() {
+  Future<void> _handleEdit() async {
     if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
       final int quantity = int.tryParse(_quantityController.text) ?? 0;
+      final name = _nameController.text;
+
+      // Only recategorize if the name has changed
+      IngredientCategory category = widget.ingredient.category;
+      if (_nameChanged) {
+        // Get category from OpenAI
+        final categoryResult = await _openAIService.categorizeIngredient(name);
+
+        category = categoryResult.fold((failure) {
+          // If there's an error, use the local categorization
+          errorHandler.handleFailure(failure);
+          return IngredientCategory.other;
+        }, (category) => category);
+      }
+
+      setState(() => _isLoading = false);
+
       final updatedItem = widget.ingredient.copyWith(
-        name: _nameController.text,
+        name: name,
         quantity: quantity,
         unit: _selectedUnit,
+        category: category,
       );
 
       widget.onEdit(updatedItem);
@@ -83,6 +119,18 @@ class _EditItemDialogState extends State<EditItemDialog> {
                 },
                 textCapitalization: TextCapitalization.sentences,
               ),
+              if (_nameChanged)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    'Changing the name will recategorize the ingredient',
+                    style: TextStyle(
+                      color: colorScheme.secondary,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _quantityController,
@@ -127,6 +175,46 @@ class _EditItemDialogState extends State<EditItemDialog> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+              // Display current category
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.category, color: colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Category',
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            _nameChanged
+                                ? 'Will be updated on save'
+                                : widget.ingredient.category.displayName,
+                            style: TextStyle(
+                              color:
+                                  _nameChanged
+                                      ? colorScheme.secondary
+                                      : colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -136,14 +224,16 @@ class _EditItemDialogState extends State<EditItemDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text('CANCEL', style: TextStyle(color: colorScheme.secondary)),
         ),
-        ElevatedButton(
-          onPressed: _handleEdit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-          ),
-          child: const Text('SAVE'),
-        ),
+        _isLoading
+            ? const CircularProgressIndicator()
+            : ElevatedButton(
+              onPressed: _handleEdit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+              ),
+              child: const Text('SAVE'),
+            ),
       ],
     );
   }

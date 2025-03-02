@@ -8,7 +8,7 @@ import '../shared/dialog_helper.dart';
 import 'components/app_bar.dart';
 import 'components/empty_state.dart';
 import 'components/loading_indicator.dart';
-import 'components/ingredient_list.dart';
+import 'components/grouped_ingredient_list.dart';
 import 'dialogs/image_picker_bottom_sheet.dart';
 import '../shared/styled_fab.dart';
 
@@ -132,7 +132,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 onRefresh: _loadInventory,
                 child:
                     hasItems
-                        ? IngredientList(
+                        ? GroupedIngredientList(
                           ingredients: _inventory,
                           onEdit: _showEditDialog,
                           onDelete: _inventoryService.deleteItem,

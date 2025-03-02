@@ -4,6 +4,7 @@ import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:what_can_i_make/domain/models/measurement_unit.dart';
 import '../models/ingredient.dart';
+import '../models/ingredient_category.dart';
 import 'package:dartz/dartz.dart';
 import '../../core/error/failures/failure.dart';
 import '../../core/utils/generate_unique_id.dart';
@@ -66,12 +67,26 @@ Produce:
 - "wedge/wedges"
 ''';
 
+  static const String CATEGORY_PROMPT = '''
+Return one of these exact categories:
+- "Vegetables"
+- "Fruits"
+- "Grains & Legumes"
+- "Meat & Seafood"
+- "Dairy & Eggs"
+- "Oils & Fats"
+- "Sweeteners & Baking Essentials"
+- "Condiments, Herbs & Spices"
+- "Other"
+''';
+
   static const _analyzePrompt = '''
 Analyze the given image of a refrigerator and extract details in JSON format. Your response should contain a single key: `"ingredients"`, which holds a list of objects. Each object should represent an ingredient and include the following keys:  
 
 - `"name"`: The specific name of the ingredient (e.g., `"Whole Milk"`, `"Cherry Tomato"`, `"Ground Beef"`, `"Cheddar Cheese"`, `"Strawberry Yogurt"`). Avoid general terms like `"Fruits"`, `"Vegetables"`, or `"Desserts"`. IMPORTANT: If brand is visible include it in the name.
 - `"quantity"`: A numerical value representing the amount of the ingredient. If the quantity is unclear, return `0`.  
 - `"unit"`: The unit of measurement for the ingredient, if the unit is unclear return `"Unknown"`. $UNIT_PROMPT
+- `"category"`: The category this ingredient belongs to. $CATEGORY_PROMPT
 
 Ensure the JSON is properly formatted and contains only relevant data from the image. Example response format:  
 
@@ -80,27 +95,38 @@ Ensure the JSON is properly formatted and contains only relevant data from the i
     {
       "name": "Whole Milk",
       "quantity": 2,
-      "unit": "L"
+      "unit": "L",
+      "category": "Dairy & Eggs"
     },
     {
       "name": "Cherry Tomatoes",
       "quantity": 200,
-      "unit": "g"
+      "unit": "g",
+      "category": "Vegetables"
     },
     {
       "name": "Cheddar Cheese",
       "quantity": 500,
-      "unit": "g"
+      "unit": "g",
+      "category": "Dairy & Eggs"
     },
     {
       "name": "Strawberry Yogurt",
       "quantity": 4,
-      "unit": "cups"
+      "unit": "cups",
+      "category": "Dairy & Eggs"
     }
   ]
 }
 
 This ensures structured, detailed outputs while avoiding vague or generalized ingredient names.
+''';
+
+  static const _categorizePrompt = '''
+Categorize the given ingredient into one of the following categories:
+$CATEGORY_PROMPT
+
+Return only the category name, nothing else.
 ''';
 
   OpenAIService() {
@@ -109,6 +135,48 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
       throw Exception('OpenAI API key not found in .env file');
     }
     _client = OpenAIClient(apiKey: apiKey);
+  }
+
+  /// Categorizes an ingredient using OpenAI
+  ///
+  /// [ingredientName] is the name of the ingredient to categorize
+  /// Returns Either a Failure or an IngredientCategory
+  Future<Either<Failure, IngredientCategory>> categorizeIngredient(
+    String ingredientName,
+  ) async {
+    try {
+      final response = await _client.createChatCompletion(
+        request: CreateChatCompletionRequest(
+          model: ChatCompletionModel.modelId('gpt-4o'),
+          messages: [
+            ChatCompletionMessage.system(
+              content:
+                  'You are a helpful assistant that categorizes food ingredients. Return only the category name, nothing else.',
+            ),
+            ChatCompletionMessage.user(
+              content: ChatCompletionUserMessageContent.string(
+                '$_categorizePrompt\n\nIngredient: $ingredientName',
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final content = response.choices.first.message.content;
+      if (content == null) {
+        return Left(OpenAIRequestFailure('Empty response from OpenAI'));
+      }
+
+      // Clean up the response (remove quotes, trim whitespace)
+      final cleanedContent =
+          content.replaceAll('"', '').replaceAll("'", '').trim();
+
+      // Convert to IngredientCategory
+      final category = IngredientCategory.fromString(cleanedContent);
+      return Right(category);
+    } catch (e) {
+      return Left(OpenAIRequestFailure(e.toString()));
+    }
   }
 
   /// Analyzes kitchen inventory images and returns a list of identified ingredients
@@ -180,24 +248,21 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
       final imageParts = await _prepareImageParts(batchPaths);
       final response = await _sendApiRequest(imageParts);
 
-      final content = response.choices.first.message.content;
-      print("content: $content");
-      if (content == null) {
-        return Left(OpenAIEmptyResponseFailure());
+      if (response.choices.isEmpty ||
+          response.choices.first.message.content == null) {
+        return Left(OpenAIRequestFailure('Empty response from OpenAI'));
       }
 
+      final content = response.choices.first.message.content!;
       final cleanedContent = _cleanJsonContent(content);
+
       return _parseResponse(cleanedContent);
-    } on SocketException {
-      return Left(OpenAIConnectionFailure());
-    } on HttpException catch (e) {
-      return Left(OpenAIRequestFailure('HTTP error: ${e.message}'));
     } on FormatException catch (e) {
-      return Left(OpenAIRequestFailure('Format error: ${e.message}'));
-    } on OpenAIClientException catch (e) {
-      return Left(OpenAIRequestFailure('OpenAI API error: ${e.message}'));
+      return Left(ParsingFailure('Format error: ${e.message}', ''));
     } catch (e) {
-      return Left(OpenAIRequestFailure(e.toString()));
+      return Left(
+        OpenAIRequestFailure('Error processing batch: ${e.toString()}'),
+      );
     }
   }
 
@@ -287,6 +352,9 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
               name: item['name'] ?? '',
               quantity: quantity,
               unit: MeasurementUnit.fromString(item['unit'] ?? 'piece'),
+              category: IngredientCategory.fromString(
+                item['category'] ?? 'Other',
+              ),
             );
           }).toList();
 
