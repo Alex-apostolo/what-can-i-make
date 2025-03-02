@@ -26,6 +26,7 @@ class Ingredient {
     return unit.plural;
   }
 
+  /// Create a copy of this Ingredient with the given fields replaced with the new values
   Ingredient copyWith({
     String? id,
     String? name,
@@ -42,34 +43,25 @@ class Ingredient {
     );
   }
 
+  /// Convert this Ingredient to a Map for storage
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
       'quantity': quantity,
       'unit': unit.label,
-      'category': category.name,
+      'category': category.displayName,
     };
   }
 
+  /// Create an Ingredient from a Map (from storage)
   factory Ingredient.fromJson(Map<String, dynamic> json) {
-    IngredientCategory? category;
-    if (json['category'] != null) {
-      try {
-        category = IngredientCategory.values.firstWhere(
-          (e) => e.name == json['category'],
-        );
-      } catch (_) {
-        // If category doesn't match, it will be auto-assigned
-      }
-    }
-
     return Ingredient(
       id: json['id'],
       name: json['name'],
       quantity: json['quantity'],
       unit: MeasurementUnit.fromString(json['unit'] ?? 'piece'),
-      category: category ?? IngredientCategory.other,
+      category: IngredientCategory.fromString(json['category'] ?? 'Other'),
     );
   }
 

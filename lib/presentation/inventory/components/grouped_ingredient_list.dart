@@ -48,8 +48,9 @@ class GroupedIngredientList extends StatelessWidget {
         final category = sortedCategories[index];
         final categoryIngredients = groupedIngredients[category]!;
 
-        // Sort ingredients within each category by name
-        categoryIngredients.sort((a, b) => a.name.compareTo(b.name));
+        // Sort ingredients by ID (most recent first)
+        // IDs are generated with timestamps, so newer items have higher IDs
+        categoryIngredients.sort((a, b) => b.id.compareTo(a.id));
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
