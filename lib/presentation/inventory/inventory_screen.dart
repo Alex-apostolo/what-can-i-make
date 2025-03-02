@@ -11,6 +11,7 @@ import 'components/loading_indicator.dart';
 import 'components/grouped_ingredient_list.dart';
 import 'dialogs/image_picker_bottom_sheet.dart';
 import '../shared/styled_fab.dart';
+import '../recipes/recipe_recommendations_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   final StorageRepository storageRepository;
@@ -115,6 +116,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final hasItems = _inventory.isNotEmpty;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: HomeAppBar(
@@ -144,10 +146,37 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
       floatingActionButton:
           hasItems
-              ? StyledFab(
-                onPressed: _showImagePicker,
-                icon: Icons.add_a_photo_rounded,
-                tooltip: 'Scan items with camera',
+              ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Recipe recommendation button
+                  FloatingActionButton(
+                    heroTag: 'recommend_recipes',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => RecipeRecommendationsScreen(
+                                preselectedIngredients: _inventory,
+                              ),
+                        ),
+                      );
+                    },
+                    backgroundColor: colorScheme.tertiaryContainer,
+                    foregroundColor: colorScheme.onTertiaryContainer,
+                    tooltip: 'Find Recipes',
+                    elevation: 4,
+                    child: const Icon(Icons.restaurant_menu, size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  // Camera button
+                  StyledFab(
+                    onPressed: _showImagePicker,
+                    icon: Icons.add_a_photo_rounded,
+                    tooltip: 'Scan items with camera',
+                  ),
+                ],
               )
               : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
