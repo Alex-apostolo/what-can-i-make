@@ -24,12 +24,6 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FaIcon(
-            FontAwesomeIcons.kitchenSet,
-            color: colorScheme.primary,
-            size: 22,
-          ),
-          const SizedBox(width: 12),
           Text(
             'Kitchen Inventory',
             style: TextStyle(

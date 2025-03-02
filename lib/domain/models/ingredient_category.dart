@@ -31,7 +31,7 @@ enum IngredientCategory {
       case IngredientCategory.vegetables:
         return FontAwesomeIcons.carrot;
       case IngredientCategory.fruits:
-        return FontAwesomeIcons.apple;
+        return FontAwesomeIcons.appleWhole;
       case IngredientCategory.grainsAndLegumes:
         return FontAwesomeIcons.wheatAwn;
       case IngredientCategory.meatAndSeafood:
