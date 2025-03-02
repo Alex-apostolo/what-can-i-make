@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:what_can_i_make/domain/models/measurement_unit.dart';
+import 'package:what_can_i_make/domain/services/category_service.dart';
 import '../models/ingredient.dart';
 import '../models/ingredient_category.dart';
 import 'package:dartz/dartz.dart';
@@ -67,18 +68,7 @@ Produce:
 - "wedge/wedges"
 ''';
 
-  static const String CATEGORY_PROMPT = '''
-Return one of these exact categories:
-- "Vegetables"
-- "Fruits"
-- "Grains & Legumes"
-- "Meat & Seafood"
-- "Dairy & Eggs"
-- "Oils & Fats"
-- "Sweeteners & Baking Essentials"
-- "Condiments, Herbs & Spices"
-- "Other"
-''';
+  static const String CATEGORY_PROMPT = CategoryService.CATEGORY_PROMPT;
 
   static const _analyzePrompt = '''
 Analyze the given image of a refrigerator and extract details in JSON format. Your response should contain a single key: `"ingredients"`, which holds a list of objects. Each object should represent an ingredient and include the following keys:  

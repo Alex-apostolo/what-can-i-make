@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/models/ingredient.dart';
 import '../../../domain/models/measurement_unit.dart';
 import '../../../domain/models/ingredient_category.dart';
-import '../../../domain/services/openai_service.dart';
+import '../../../domain/services/category_service.dart';
 import '../../../core/error/error_handler.dart';
 
 class EditItemDialog extends StatefulWidget {
@@ -26,7 +26,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
   late MeasurementUnit _selectedUnit;
   bool _isLoading = false;
   bool _nameChanged = false;
-  final _openAIService = OpenAIService();
+  final _categoryService = CategoryService();
 
   @override
   void initState() {
@@ -51,7 +51,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
   void dispose() {
     _nameController.dispose();
     _quantityController.dispose();
-    _openAIService.dispose();
+    _categoryService.dispose();
     super.dispose();
   }
 
@@ -65,11 +65,13 @@ class _EditItemDialogState extends State<EditItemDialog> {
       // Only recategorize if the name has changed
       IngredientCategory category = widget.ingredient.category;
       if (_nameChanged) {
-        // Get category from OpenAI
-        final categoryResult = await _openAIService.categorizeIngredient(name);
+        // Get category from CategoryService
+        final categoryResult = await _categoryService.categorizeIngredient(
+          name,
+        );
 
         category = categoryResult.fold((failure) {
-          // If there's an error, use the local categorization
+          // If there's an error, use the default category
           errorHandler.handleFailure(failure);
           return IngredientCategory.other;
         }, (category) => category);

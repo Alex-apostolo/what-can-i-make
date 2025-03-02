@@ -22,23 +22,24 @@ class GroupedIngredientList extends StatelessWidget {
 
     // Group ingredients by category
     final groupedIngredients = <IngredientCategory, List<Ingredient>>{};
-    
+
     // Initialize all categories with empty lists
     for (final category in IngredientCategory.values) {
       groupedIngredients[category] = [];
     }
-    
+
     // Add ingredients to their respective categories
     for (final ingredient in ingredients) {
       groupedIngredients[ingredient.category]!.add(ingredient);
     }
-    
+
     // Remove empty categories
     groupedIngredients.removeWhere((key, value) => value.isEmpty);
-    
-    // Sort categories by display name
-    final sortedCategories = groupedIngredients.keys.toList()
-      ..sort((a, b) => a.displayName.compareTo(b.displayName));
+
+    // Sort categories by their defined sort order
+    final sortedCategories =
+        groupedIngredients.keys.toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
@@ -46,7 +47,10 @@ class GroupedIngredientList extends StatelessWidget {
       itemBuilder: (context, index) {
         final category = sortedCategories[index];
         final categoryIngredients = groupedIngredients[category]!;
-        
+
+        // Sort ingredients within each category by name
+        categoryIngredients.sort((a, b) => a.name.compareTo(b.name));
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -61,21 +65,23 @@ class GroupedIngredientList extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Divider
             Divider(color: colorScheme.primary.withOpacity(0.2)),
-            
+
             // Ingredients in this category
-            ...categoryIngredients.map((ingredient) => IngredientCard(
-              ingredient: ingredient,
-              onEdit: onEdit,
-              onDelete: onDelete,
-            )),
-            
+            ...categoryIngredients.map(
+              (ingredient) => IngredientCard(
+                ingredient: ingredient,
+                onEdit: onEdit,
+                onDelete: onDelete,
+              ),
+            ),
+
             const SizedBox(height: 8.0),
           ],
         );
       },
     );
   }
-} 
+}
