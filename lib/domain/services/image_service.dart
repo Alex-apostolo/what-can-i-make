@@ -66,21 +66,11 @@ class ImageService {
   Future<Either<Failure, void>> _processImages(List<String> imagePaths) async {
     final ingredientsResult = await _foodImageAnalyzer.run(imagePaths);
 
-    return ingredientsResult.fold((failure) => Left(failure), (
-      ingredients,
-    ) async {
-      // Add each ingredient to inventory
-      for (final ingredient in ingredients) {
-        final result = await _inventoryService.addIngredient(ingredient);
-
-        // If any ingredient fails to save, return the failure
-        if (result.isLeft()) {
-          return result;
-        }
-      }
-
-      return const Right(null);
-    });
+    return ingredientsResult.fold(
+      (failure) => Left(failure),
+      (ingredients) async =>
+          await _inventoryService.addIngredients(ingredients),
+    );
   }
 
   /// Disposes resources

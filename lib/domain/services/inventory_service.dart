@@ -27,6 +27,11 @@ class InventoryService {
     return _storageRepository.addIngredient(newIngredient);
   }
 
+  /// Adds multiple items
+  Future<Either<Failure, void>> addIngredients(List<Ingredient> newIngredients) async {
+    return _storageRepository.addIngredients(newIngredients);
+  }
+
   /// Deletes an item
   Future<Either<Failure, void>> deleteIngredient(Ingredient ingredient) async {
     return _storageRepository.removeIngredient(ingredient);
