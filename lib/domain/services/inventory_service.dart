@@ -30,27 +30,11 @@ class InventoryService {
   Future<Either<Failure, void>> addIngredients(
     List<Ingredient> newIngredients,
   ) async {
-    // Get existing ingredients
-    final existingInventoryResult = await _storageRepository.getIngredients();
-
-    return existingInventoryResult.fold((failure) => Left(failure), (
-      existingInventory,
-    ) async {
-      // Combine new and existing ingredients
-      final combinedInventoryResult = await _ingredientCombinerService
-          .getCombinedIngredients(
-            newIngredients: newIngredients,
-            existingInventory: existingInventory,
-          );
-
-      return combinedInventoryResult.fold((failure) => Left(failure), (
-        combinedInventory,
-      ) async {
-        // Clear old inventory and add combined ingredients
-        await _storageRepository.clearIngredients();
-        return _storageRepository.addIngredients(combinedInventory);
-      });
-    });
+    final result = await _storageRepository.addIngredients(newIngredients);
+    return result.fold(
+      (failure) => Left(failure),
+      (ingredients) => tidyIngredients(),
+    );
   }
 
   /// Deletes an item
@@ -61,6 +45,16 @@ class InventoryService {
   /// Clears all inventory items
   Future<Either<Failure, void>> clearIngredients() async {
     return _storageRepository.clearIngredients();
+  }
+
+  /// Tidies the inventory, removing duplicates and combining quantities
+  Future<Either<Failure, void>> tidyIngredients() async {
+    final result = await getIngredients();
+    return result.fold(
+      (failure) => Left(failure),
+      (existingInventory) =>
+          _ingredientCombinerService.combineIngredients(existingInventory),
+    );
   }
 
   /// Disposes resources

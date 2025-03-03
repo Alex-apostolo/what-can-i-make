@@ -18,45 +18,26 @@ class IngredientCombinerService {
     _client = OpenAIClient(apiKey: apiKey);
   }
 
-  Future<Either<Failure, List<Ingredient>>> getCombinedIngredients({
-    required List<Ingredient> newIngredients,
-    required List<Ingredient> existingInventory,
-  }) async {
-    // Format the ingredients list for the prompt
-    final newIngredientsString = newIngredients
-        .map((ingredient) => ingredient.toJson().toString())
-        .join("\n");
+  Future<Either<Failure, List<Ingredient>>> combineIngredients(
+    List<Ingredient> existingInventory,
+  ) async {
+    print("BREAK");
+    print("existingInventory length: ${existingInventory.length}");
+    print("BREAK");
+
     final existingInventoryString = existingInventory
         .map((ingredient) => ingredient.toJson().toString())
         .join("\n");
 
-    print("newIngredientsString: $newIngredientsString");
-    print("existingInventoryString: $existingInventoryString");
-
     final prompt = '''
 You are an AI assistant that helps process food ingredients for a cooking app.
 
-EXISTING INVENTORY:
 $existingInventoryString
 
-NEW INGREDIENT:
-$newIngredientsString
+Combine the ingredients which have a similar name and add their quantities. Use fuzzy matching to determine if the names match and choose the most descriptive name for the ingredient. Make sure to be smart about adding the quantities because the units can be different (e.g. kg and pieces) choose the most appropriate metric.
 
-Please analyze the new ingredient and:
-1. Normalize the name (proper capitalization, remove unnecessary words)
-2. Assign the most appropriate category
-3. Suggest the best unit for this ingredient if the current one is inappropriate
-4. Check if this ingredient might be a duplicate of something in the inventory
-5. Return the processed ingredient as a JSON object with the same structure
+IMPORTANT: Your response must be ONLY a valid JSON array of objects, even if there's just one ingredient.
 
-Your response should be ONLY a valid JSON object with the following fields:
-{
-  "id": "same as input",
-  "name": "normalized name",
-  "category": "appropriate category",
-  "quantity": number,
-  "unit": "appropriate unit",
-}
 ''';
 
     try {
@@ -69,8 +50,6 @@ Your response should be ONLY a valid JSON object with the following fields:
               content: ChatCompletionUserMessageContent.string(prompt),
             ),
           ],
-          temperature: 0.7,
-          maxTokens: 1000,
         ),
       );
 
@@ -81,35 +60,27 @@ Your response should be ONLY a valid JSON object with the following fields:
       }
 
       final cleanedContent = cleanJsonContent(content);
-
-      try {
-        // Parse the JSON content
-        final jsonData = jsonDecode(cleanedContent);
-
-        // Check if the response is a single object or an array
-        if (jsonData is Map<String, dynamic>) {
-          // Single ingredient response
-          final ingredient = Ingredient.fromJson(jsonData);
-          return Right([ingredient]);
-        } else if (jsonData is List) {
-          // List of ingredients response
-          final ingredients =
-              jsonData
-                  .map(
-                    (item) => Ingredient.fromJson(item as Map<String, dynamic>),
-                  )
-                  .toList();
-          return Right(ingredients);
-        } else {
-          return Left(OpenAIConnectionFailure());
-        }
-      } catch (e) {
-        print("JSON parsing error: $e");
-        return Left(OpenAIConnectionFailure());
-      }
+      return _parseResponse(cleanedContent);
     } catch (e) {
-      print("error: $e");
       return Left(OpenAIRequestFailure());
+    }
+  }
+
+  Either<Failure, List<Ingredient>> _parseResponse(String content) {
+    try {
+      print("content: $content");
+      final jsonData = jsonDecode(content) as List;
+      print("jsonData length: ${jsonData.length}");
+
+      final ingredients =
+          jsonData
+              .map((item) => Ingredient.fromJson(item as Map<String, dynamic>))
+              .toList();
+
+      return Right(ingredients);
+    } catch (e) {
+      print("Error parsing JSON: $e");
+      return Left(ParsingFailure());
     }
   }
 }
