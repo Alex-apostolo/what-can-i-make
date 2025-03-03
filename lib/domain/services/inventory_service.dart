@@ -1,66 +1,40 @@
-import 'package:flutter/foundation.dart';
-import '../../core/utils/generate_unique_id.dart';
+import 'package:dartz/dartz.dart';
+import '../../core/error/failures/failure.dart';
 import '../models/ingredient.dart';
-import '../../data/repositories/storage_repository.dart';
-import '../../core/error/error_handler.dart';
+import '../../data/repositories/ingredients_repository.dart';
 
 /// Service to manage kitchen inventory operations
 class InventoryService {
   final StorageRepository _storageRepository;
 
-  // Callback for when inventory changes
-  final VoidCallback onInventoryChanged;
-
-  InventoryService({
-    required this.onInventoryChanged,
-    required StorageRepository storageRepository,
-  }) : _storageRepository = storageRepository;
+  InventoryService({required StorageRepository storageRepository})
+    : _storageRepository = storageRepository;
 
   /// Loads inventory from storage
-  Future<List<Ingredient>> loadInventory() async {
-    final result = await _storageRepository.getInventory();
-
-    return result.fold(
-      (failure) {
-        errorHandler.handleFailure(failure);
-        return <Ingredient>[];
-      },
-      (items) {
-        items.sort(
-          (a, b) =>
-              getTimestampFromId(b.id).compareTo(getTimestampFromId(a.id)),
-        );
-        return items;
-      },
-    );
+  Future<Either<Failure, List<Ingredient>>> getIngredients() async {
+    return _storageRepository.getIngredients();
   }
 
   /// Updates an existing item
-  Future<void> updateItem(Ingredient updatedItem) async {
-    final result = await _storageRepository.updateItem(updatedItem);
-
-    errorHandler.handleEither(result, onSuccess: (_) => onInventoryChanged());
+  Future<Either<Failure, void>> updateIngredient(
+    Ingredient updatedIngredient,
+  ) async {
+    return _storageRepository.updateIngredient(updatedIngredient);
   }
 
   /// Adds a new item
-  Future<void> addItem(Ingredient newItem) async {
-    final result = await _storageRepository.addItem(newItem);
-
-    errorHandler.handleEither(result, onSuccess: (_) => onInventoryChanged());
+  Future<Either<Failure, void>> addIngredient(Ingredient newIngredient) async {
+    return _storageRepository.addIngredient(newIngredient);
   }
 
   /// Deletes an item
-  Future<void> deleteItem(Ingredient item) async {
-    final result = await _storageRepository.removeItem(item);
-
-    errorHandler.handleEither(result, onSuccess: (_) => onInventoryChanged());
+  Future<Either<Failure, void>> deleteIngredient(Ingredient ingredient) async {
+    return _storageRepository.removeIngredient(ingredient);
   }
 
   /// Clears all inventory items
-  Future<void> clearInventory() async {
-    final result = await _storageRepository.clearInventory();
-
-    errorHandler.handleEither(result, onSuccess: (_) => onInventoryChanged());
+  Future<Either<Failure, void>> clearIngredients() async {
+    return _storageRepository.clearIngredients();
   }
 
   /// Disposes resources

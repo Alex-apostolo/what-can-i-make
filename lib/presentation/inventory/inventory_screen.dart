@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../data/repositories/storage_repository.dart';
+import 'package:what_can_i_make/core/error/error_handler.dart';
+import '../../data/repositories/ingredients_repository.dart';
 import '../../domain/models/ingredient.dart';
 import '../../domain/services/inventory_service.dart';
 import '../../domain/services/image_service.dart';
@@ -39,14 +40,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     // Initialize services
     _inventoryService = InventoryService(
-      onInventoryChanged: _loadInventory,
       storageRepository: widget.storageRepository,
     );
 
-    _imageService = ImageService(
-      onInventoryChanged: _loadInventory,
-      storageRepository: widget.storageRepository,
-    );
+    _imageService = ImageService(inventoryService: _inventoryService);
 
     _loadInventory();
   }
@@ -54,9 +51,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Future<void> _loadInventory() async {
     setState(() => _isLoading = true);
 
-    final items = await _inventoryService.loadInventory();
-    setState(() => _inventory = items);
+    final ingredients = errorHandler.handleEither(
+      await _inventoryService.getIngredients(),
+    );
 
+    setState(() => _inventory = ingredients);
     setState(() => _isLoading = false);
   }
 
@@ -64,20 +63,46 @@ class _InventoryScreenState extends State<InventoryScreen> {
     setState(() => _isLoading = isLoading);
   }
 
-  void _setProcessingImages(bool isProcessing, int count) {
+  void _pickImages(ImageSource source) async {
     setState(() {
-      _isProcessingImages = isProcessing;
-      _totalImagesToProcess = count;
+      _isLoading = true;
+      _isProcessingImages = true;
+      _totalImagesToProcess = 1; // Initial value, will be updated
     });
-  }
 
-  void _pickImages(ImageSource source) {
-    _imageService.pickImages(
-      context,
-      source,
-      _setLoading,
-      _setProcessingImages,
-    );
+    if (source == ImageSource.camera) {
+      errorHandler.handleEither(
+        await _imageService.pickAndProcessCameraImage(),
+      );
+    } else {
+      final pickedResult = errorHandler.handleEither(
+        await _imageService.pickAndProcessGalleryImages(),
+      );
+
+      if (pickedResult.limitExceeded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'You selected ${pickedResult.totalSelected} images. Only the first 15 will be processed.',
+            ),
+            backgroundColor: Colors.orange.shade800,
+          ),
+        );
+      }
+
+      setState(() {
+        _totalImagesToProcess = pickedResult.processedCount;
+      });
+    }
+
+    setState(() {
+      _isLoading = false;
+      _isProcessingImages = false;
+      _totalImagesToProcess = 0;
+    });
+
+    // Refresh inventory after processing
+    _loadInventory();
   }
 
   void _showImagePicker() {
@@ -99,17 +124,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _showAddDialog() {
-    DialogHelper.showAddDialog(context, _inventoryService.addItem);
+    DialogHelper.showAddDialog(context, _inventoryService.addIngredient);
   }
 
   void _showEditDialog(Ingredient item) {
-    DialogHelper.showEditDialog(context, item, _inventoryService.updateItem);
+    DialogHelper.showEditDialog(
+      context,
+      item,
+      _inventoryService.updateIngredient,
+    );
   }
 
   void _showClearConfirmationDialog() {
     DialogHelper.showClearConfirmationDialog(context, () {
       _setLoading(true);
-      _inventoryService.clearInventory();
+      _inventoryService.clearIngredients();
     });
   }
 
@@ -137,7 +166,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         ? GroupedIngredientList(
                           ingredients: _inventory,
                           onEdit: _showEditDialog,
-                          onDelete: _inventoryService.deleteItem,
+                          onDelete: _inventoryService.deleteIngredient,
                         )
                         : EmptyState(
                           onAddPressed: _showAddDialog,

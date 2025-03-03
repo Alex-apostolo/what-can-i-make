@@ -66,9 +66,8 @@ Return only the category name, nothing else.
       );
 
       final content = response.choices.first.message.content;
-      print("Category response: $content");
       if (content == null) {
-        return Left(OpenAIRequestFailure('Empty response from OpenAI'));
+        return Left(OpenAIEmptyResponseFailure());
       }
 
       // Clean up the response (remove quotes, trim whitespace)
@@ -78,8 +77,8 @@ Return only the category name, nothing else.
       // Convert to IngredientCategory
       final category = IngredientCategory.fromString(cleanedContent);
       return Right(category);
-    } catch (e) {
-      return Left(OpenAIRequestFailure(e.toString()));
+    } on OpenAIClientException {
+      return Left(OpenAIRequestFailure());
     }
   }
 

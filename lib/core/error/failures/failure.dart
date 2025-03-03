@@ -7,12 +7,13 @@ abstract class Failure {
 
 /// Failure related to OpenAI API requests
 class OpenAIRequestFailure extends Failure {
-  const OpenAIRequestFailure(String message) : super('OpenAI request failed: $message');
+  const OpenAIRequestFailure() : super('OpenAI request failed');
 }
 
 /// Failure when OpenAI returns an empty response
 class OpenAIEmptyResponseFailure extends Failure {
-  const OpenAIEmptyResponseFailure() : super('OpenAI returned an empty response');
+  const OpenAIEmptyResponseFailure()
+    : super('OpenAI returned an empty response');
 }
 
 /// Failure when connection to OpenAI fails
@@ -22,9 +23,7 @@ class OpenAIConnectionFailure extends Failure {
 
 /// Failure when parsing OpenAI response
 class ParsingFailure extends Failure {
-  final String content;
-
-  const ParsingFailure(String message, this.content) : super('Parsing error: $message');
+  const ParsingFailure() : super('Parsing error');
 }
 
 /// Failure when database connection fails
@@ -34,11 +33,11 @@ class DatabaseConnectionFailure extends Failure {
 
 /// Failure when a database query fails
 class DatabaseQueryFailure extends Failure {
-  const DatabaseQueryFailure(String operation, String error)
-      : super('Database $operation failed: $error');
+  const DatabaseQueryFailure(String operation)
+    : super('Database $operation failed');
 }
 
 /// Failure when an item is not found in the database
 class ItemNotFoundFailure extends Failure {
   const ItemNotFoundFailure(String id) : super('Item with ID $id not found');
-} 
+}

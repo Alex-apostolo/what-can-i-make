@@ -1,8 +1,8 @@
+import 'package:dartz/dartz.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter/material.dart';
+import '../../core/error/failures/failure.dart';
 import 'food_image_analyzer.dart';
-import '../../data/repositories/storage_repository.dart';
-import '../../core/error/error_handler.dart';
+import 'inventory_service.dart';
 
 /// Service to handle image selection and processing
 class ImageService {
@@ -12,108 +12,90 @@ class ImageService {
   // Services
   final ImagePicker _picker = ImagePicker();
   final FoodImageAnalyzer _foodImageAnalyzer = FoodImageAnalyzer();
-  final StorageRepository _storageRepository;
-
-  // Callback for when inventory changes
-  final VoidCallback onInventoryChanged;
+  final InventoryService _inventoryService;
 
   /// Constructor that initializes the service
-  ImageService({
-    required this.onInventoryChanged,
-    required StorageRepository storageRepository,
-  }) : _storageRepository = storageRepository;
+  ImageService({required InventoryService inventoryService})
+    : _inventoryService = inventoryService;
 
-  /// Handles image selection from camera or gallery
-  Future<void> pickImages(
-    BuildContext context,
-    ImageSource source,
-    Function(bool) setLoading,
-    Function(bool, int) setProcessingImages,
-  ) async {
-    if (source == ImageSource.camera) {
-      await _handleCameraSelection(setLoading, setProcessingImages);
-    } else {
-      await _handleGallerySelection(context, setLoading, setProcessingImages);
-    }
-  }
-
-  /// Handles camera image selection
-  Future<void> _handleCameraSelection(
-    Function(bool) setLoading,
-    Function(bool, int) setProcessingImages,
-  ) async {
+  /// Picks a single image from camera
+  Future<Either<Failure, void>> pickAndProcessCameraImage() async {
     final image = await _picker.pickImage(source: ImageSource.camera);
-    if (image == null) return;
+    if (image == null) {
+      return const Right(null); // User cancelled, not an error
+    }
 
-    setLoading(true);
-    setProcessingImages(true, 1);
-
-    await _processImages([image.path]);
-
-    setLoading(false);
-    setProcessingImages(false, 0);
+    return _processImages([image.path]);
   }
 
-  /// Handles gallery image selection with limit checking
-  Future<void> _handleGallerySelection(
-    BuildContext context,
-    Function(bool) setLoading,
-    Function(bool, int) setProcessingImages,
-  ) async {
+  /// Picks multiple images from gallery
+  Future<Either<Failure, PickedImagesResult>>
+  pickAndProcessGalleryImages() async {
     final images = await _picker.pickMultiImage();
-    if (images.isEmpty) return;
+    if (images.isEmpty) {
+      return const Right(
+        PickedImagesResult(processedCount: 0, limitExceeded: false),
+      );
+    }
 
     // Check if too many images were selected
-    if (images.length > maxImageSelection) {
-      _showTooManyImagesWarning(context, images.length);
-    }
+    final limitExceeded = images.length > maxImageSelection;
 
     // Limit to max images
     final limitedImages = images.take(maxImageSelection).toList();
 
-    setLoading(true);
-    setProcessingImages(true, limitedImages.length);
-
     // Process all images at once
     final imagePaths = limitedImages.map((image) => image.path).toList();
-    await _processImages(imagePaths);
+    final result = await _processImages(imagePaths);
 
-    setLoading(false);
-    setProcessingImages(false, 0);
-  }
-
-  /// Shows warning when too many images are selected
-  void _showTooManyImagesWarning(BuildContext context, int selectedCount) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'You selected $selectedCount images. Only the first $maxImageSelection will be processed.',
-          style: const TextStyle(color: Colors.white),
+    return result.fold(
+      (failure) => Left(failure),
+      (_) => Right(
+        PickedImagesResult(
+          processedCount: limitedImages.length,
+          limitExceeded: limitExceeded,
+          totalSelected: images.length,
         ),
-        backgroundColor: Colors.orange.shade800,
-        duration: const Duration(seconds: 3),
       ),
     );
   }
 
   /// Processes images through OpenAI and saves results
-  Future<void> _processImages(List<String> imagePaths) async {
-    final result = await _foodImageAnalyzer.analyzeInventory(imagePaths);
+  Future<Either<Failure, void>> _processImages(List<String> imagePaths) async {
+    final ingredientsResult = await _foodImageAnalyzer.run(imagePaths);
 
-    errorHandler.handleEither(
-      result,
-      onSuccess: (items) async {
-        final saveResult = await _storageRepository.addItems(items);
-        errorHandler.handleEither(
-          saveResult,
-          onSuccess: (_) => onInventoryChanged(),
-        );
-      },
-    );
+    return ingredientsResult.fold((failure) => Left(failure), (
+      ingredients,
+    ) async {
+      // Add each ingredient to inventory
+      for (final ingredient in ingredients) {
+        final result = await _inventoryService.addIngredient(ingredient);
+
+        // If any ingredient fails to save, return the failure
+        if (result.isLeft()) {
+          return result;
+        }
+      }
+
+      return const Right(null);
+    });
   }
 
   /// Disposes resources
   void dispose() {
     _foodImageAnalyzer.dispose();
   }
+}
+
+/// Result class for gallery image picking
+class PickedImagesResult {
+  final int processedCount;
+  final bool limitExceeded;
+  final int totalSelected;
+
+  const PickedImagesResult({
+    required this.processedCount,
+    required this.limitExceeded,
+    this.totalSelected = 0,
+  });
 }

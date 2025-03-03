@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'presentation/inventory/inventory_screen.dart';
 import 'presentation/theme/app_theme.dart';
-import 'data/repositories/storage_repository.dart';
+import 'data/repositories/ingredients_repository.dart';
 import 'core/error/error_handler.dart';
 import 'package:flutter/services.dart';
 

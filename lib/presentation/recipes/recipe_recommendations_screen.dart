@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:what_can_i_make/data/repositories/storage_repository.dart';
+import 'package:what_can_i_make/data/repositories/ingredients_repository.dart';
+import '../../core/error/error_handler.dart';
 import '../../domain/models/ingredient.dart';
 import '../../domain/models/recipe.dart';
 import '../../domain/services/recipe_recommendation_service.dart';
@@ -21,7 +22,6 @@ class _RecipeRecommendationsScreenState
   final RecipeRecommendationService _recipeService =
       RecipeRecommendationService();
   final InventoryService _inventoryService = InventoryService(
-    onInventoryChanged: () => {},
     storageRepository: StorageRepository(),
   );
 
@@ -45,7 +45,9 @@ class _RecipeRecommendationsScreenState
 
   Future<void> _loadIngredients() async {
     setState(() => _isLoading = true);
-    final ingredients = await _inventoryService.loadInventory();
+    final ingredients = errorHandler.handleEither(
+      await _inventoryService.getIngredients(),
+    );
     setState(() {
       _availableIngredients = ingredients;
       _isLoading = false;
@@ -60,9 +62,11 @@ class _RecipeRecommendationsScreenState
             .where((i) => _selectedIngredientIds.contains(i.id))
             .toList();
 
-    final recipes = await _recipeService.getRecommendedRecipes(
-      availableIngredients: selectedIngredients,
-      strictMode: _strictMode,
+    final recipes = errorHandler.handleEither(
+      await _recipeService.getRecommendedRecipes(
+        availableIngredients: selectedIngredients,
+        strictMode: _strictMode,
+      ),
     );
 
     setState(() {

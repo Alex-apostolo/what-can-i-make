@@ -120,24 +120,18 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
   ///
   /// [imagePaths] is a list of paths to image files to analyze
   /// Returns Either a Failure or a list of [Ingredient] objects
-  Future<Either<Failure, List<Ingredient>>> analyzeInventory(
-    List<String> imagePaths,
-  ) async {
+  Future<Either<Failure, List<Ingredient>>> run(List<String> imagePaths) async {
     if (imagePaths.isEmpty) {
       return const Right([]);
     }
 
-    try {
-      // Create batches of images to process in parallel
-      final batches = _createBatches(imagePaths);
+    // Create batches of images to process in parallel
+    final batches = _createBatches(imagePaths);
 
-      // Process all batches in parallel
-      final results = await Future.wait(batches.map(_processBatch));
+    // Process all batches in parallel
+    final results = await Future.wait(batches.map(_processBatch));
 
-      return _combineResults(results);
-    } catch (e) {
-      return Left(OpenAIRequestFailure(e.toString()));
-    }
+    return _combineResults(results);
   }
 
   /// Creates batches of images for parallel processing
@@ -190,20 +184,15 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
 
       if (response.choices.isEmpty ||
           response.choices.first.message.content == null) {
-        return Left(OpenAIRequestFailure('Empty response from OpenAI'));
+        return Left(OpenAIEmptyResponseFailure());
       }
 
       final content = response.choices.first.message.content!;
-      print("content: $content");
       final cleanedContent = _cleanJsonContent(content);
 
       return _parseResponse(cleanedContent);
-    } on FormatException catch (e) {
-      return Left(ParsingFailure('Format error: ${e.message}', ''));
-    } catch (e) {
-      return Left(
-        OpenAIRequestFailure('Error processing batch: ${e.toString()}'),
-      );
+    } on OpenAIClientException {
+      return Left(OpenAIRequestFailure());
     }
   }
 
@@ -300,14 +289,8 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
           }).toList();
 
       return Right(parsedIngredients);
-    } on FormatException catch (e) {
-      return Left(ParsingFailure('JSON format error: ${e.message}', content));
-    } on TypeError catch (e) {
-      return Left(ParsingFailure('Type error: ${e.toString()}', content));
-    } catch (e) {
-      return Left(
-        ParsingFailure('Failed to parse response: ${e.toString()}', content),
-      );
+    } on FormatException {
+      return Left(ParsingFailure());
     }
   }
 

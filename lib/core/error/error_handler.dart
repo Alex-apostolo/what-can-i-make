@@ -13,11 +13,11 @@ class ErrorHandler {
 
   /// Handles an Either result, executing success callback on Right
   /// or showing error on Left
-  void handleEither<T>(
-    Either<Failure, T> either, {
-    required Function(T) onSuccess,
-  }) {
-    either.fold(handleFailure, onSuccess);
+  handleEither<T>(Either<Failure, T> either) {
+    return either.fold((failure) {
+      handleFailure(failure);
+      return null;
+    }, (value) => value);
   }
 }
 
