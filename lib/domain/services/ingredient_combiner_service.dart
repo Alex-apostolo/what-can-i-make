@@ -1,6 +1,5 @@
 import 'package:dartz/dartz.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
-import 'package:units_converter/units_converter.dart';
 import 'package:what_can_i_make/domain/models/measurement_unit.dart';
 import '../../core/error/failures/failure.dart';
 import '../models/ingredient.dart';
@@ -99,8 +98,8 @@ class IngredientCombinerService {
 
     final base = sortedByNameLength.first;
 
-    // Determine the best unit to use (prefer larger units)
-    final bestUnit = _determineBestUnit(group);
+    // For simplicity, just use the largest unit found
+    final largestUnit = _findLargestUnit(group);
 
     // Combine quantities with unit conversion
     double totalQuantity = 0;
@@ -109,7 +108,7 @@ class IngredientCombinerService {
       final convertedQuantity = _convertToBestUnit(
         ingredient.quantity.toDouble(),
         ingredient.unit.name,
-        bestUnit,
+        largestUnit,
         ingredient.name,
       );
 
@@ -117,12 +116,9 @@ class IngredientCombinerService {
         totalQuantity += convertedQuantity;
       } else {
         print(
-          'Could not convert ${ingredient.unit.name} to $bestUnit for ${ingredient.name}',
+          'Could not convert ${ingredient.unit.name} to $largestUnit for ${ingredient.name}',
         );
-        // If we can't convert, just add the original quantity if units match
-        if (ingredient.unit.name == bestUnit) {
-          totalQuantity += ingredient.quantity.toDouble();
-        }
+        // If we can't convert, we'll just skip adding this quantity for simplicity
       }
     }
 
@@ -131,217 +127,110 @@ class IngredientCombinerService {
       name: base.name,
       category: base.category,
       quantity: totalQuantity.round(),
-      unit: MeasurementUnit.fromString(bestUnit),
+      unit: MeasurementUnit.fromString(_normalizeUnitName(largestUnit)),
     );
   }
 
-  /// Determines the best unit to use for a group of ingredients
-  String _determineBestUnit(List<Ingredient> group) {
-    // Count unit frequencies
-    final unitCounts = <String, int>{};
-    for (final ingredient in group) {
-      final unitName = ingredient.unit.name;
-      unitCounts[unitName] = (unitCounts[unitName] ?? 0) + 1;
-    }
+  /// Finds the largest unit among a group of ingredients
+  String _findLargestUnit(List<Ingredient> group) {
+    // Unit size hierarchy (from largest to smallest)
+    final weightHierarchy = ['kg', 'lb', 'g', 'oz'];
+    final volumeHierarchy = ['l', 'cup', 'tbsp', 'tsp', 'ml'];
 
-    // If there's a dominant unit, use it
-    final mostCommonUnit =
-        unitCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+    // Collect all normalized unit names
+    final units = group.map((i) => _normalizeUnitName(i.unit.name)).toSet();
 
-    if (unitCounts[mostCommonUnit]! > group.length / 2) {
-      return mostCommonUnit;
-    }
-
-    // Otherwise, try to find the largest unit that can represent all values
-    final weightUnits = ['kg', 'g', 'lb', 'oz'];
-    final volumeUnits = ['l', 'ml', 'cup', 'tbsp', 'tsp'];
-
-    // Check if all units are weight units
-    final allWeightUnits = group.every(
-      (i) => weightUnits.contains(i.unit.name),
-    );
-    if (allWeightUnits) {
-      // Prefer kg for large quantities, g for smaller
-      final totalGrams = _estimateTotalInGrams(group);
-      return totalGrams > 1000 ? 'kg' : 'g';
-    }
-
-    // Check if all units are volume units
-    final allVolumeUnits = group.every(
-      (i) => volumeUnits.contains(i.unit.name),
-    );
-    if (allVolumeUnits) {
-      // Prefer l for large quantities, ml for smaller
-      final totalMl = _estimateTotalInMilliliters(group);
-      return totalMl > 1000 ? 'l' : 'ml';
-    }
-
-    // Default to the most common unit
-    return mostCommonUnit;
-  }
-
-  /// Estimates the total quantity in grams
-  double _estimateTotalInGrams(List<Ingredient> group) {
-    double totalGrams = 0;
-    for (final ingredient in group) {
-      final grams = _convertToGrams(
-        ingredient.quantity.toDouble(),
-        ingredient.unit.name,
-      );
-      if (grams != null) {
-        totalGrams += grams;
+    // Check weight units first
+    for (final unit in weightHierarchy) {
+      if (units.contains(unit)) {
+        return unit;
       }
     }
-    return totalGrams;
-  }
 
-  /// Estimates the total quantity in milliliters
-  double _estimateTotalInMilliliters(List<Ingredient> group) {
-    double totalMl = 0;
-    for (final ingredient in group) {
-      final ml = _convertToMilliliters(
-        ingredient.quantity.toDouble(),
-        ingredient.unit.name,
-      );
-      if (ml != null) {
-        totalMl += ml;
+    // Then check volume units
+    for (final unit in volumeHierarchy) {
+      if (units.contains(unit)) {
+        return unit;
       }
     }
-    return totalMl;
+
+    // If no standard units found, return the first ingredient's unit
+    return _normalizeUnitName(group.first.unit.name);
   }
 
-  /// Converts a quantity to the best unit using units_converter
+  /// Simple conversion between units of the same type
   double? _convertToBestUnit(
     double quantity,
     String fromUnit,
     String toUnit,
     String ingredientName,
   ) {
-    // Skip conversion if units are the same
-    if (fromUnit == toUnit) return quantity;
+    // Normalize unit names
+    final normalizedFromUnit = _normalizeUnitName(fromUnit);
+    final normalizedToUnit = _normalizeUnitName(toUnit);
 
-    try {
-      // Try standard conversion with units_converter
-      return _convertWithUnitsConverter(quantity, fromUnit, toUnit);
-    } catch (e) {
-      // If standard conversion fails, try our custom conversions
-      return _fallbackConversion(quantity, fromUnit, toUnit, ingredientName);
+    // If units are the same, no conversion needed
+    if (normalizedFromUnit == normalizedToUnit) {
+      return quantity;
     }
+
+    // For simplicity, we'll only handle same-unit-type conversions
+    // with basic conversion factors
+    final conversions = {
+      // Weight conversions
+      'kg': {'g': 1000, 'kg': 1},
+      'g': {'kg': 0.001, 'g': 1},
+      'lb': {'oz': 16, 'lb': 1},
+      'oz': {'lb': 0.0625, 'oz': 1},
+
+      // Volume conversions
+      'l': {'ml': 1000, 'l': 1},
+      'ml': {'l': 0.001, 'ml': 1},
+      'cup': {'tbsp': 16, 'tsp': 48, 'cup': 1},
+      'tbsp': {'tsp': 3, 'cup': 0.0625, 'tbsp': 1},
+      'tsp': {'tbsp': 0.333, 'cup': 0.0208, 'tsp': 1},
+    };
+
+    // Check if we have a conversion factor
+    if (conversions.containsKey(normalizedFromUnit) &&
+        conversions[normalizedFromUnit]!.containsKey(normalizedToUnit)) {
+      return quantity * conversions[normalizedFromUnit]![normalizedToUnit]!;
+    }
+
+    // If no conversion found, return null
+    return null;
   }
 
-  /// Converts to grams
-  double? _convertToGrams(double quantity, String fromUnit) {
-    return _convertWithUnitsConverter(quantity, fromUnit, 'g');
-  }
-
-  /// Converts to milliliters
-  double? _convertToMilliliters(double quantity, String fromUnit) {
-    return _convertWithUnitsConverter(quantity, fromUnit, 'ml');
-  }
-
-  /// Converts units using the units_converter package
-  double? _convertWithUnitsConverter(
-    double quantity,
-    String fromUnit,
-    String toUnit,
-  ) {
-    // Map our unit names to units_converter units
+  /// Add this method to normalize unit names
+  String _normalizeUnitName(String unitName) {
+    // Map full unit names to abbreviations
     final unitMap = {
-      // Mass units
-      'g': MASS.grams,
-      'kg': MASS.kilograms,
-      'oz': MASS.ounces,
-      'lb': MASS.pounds,
-
-      // Volume units
-      'ml': VOLUME.milliliters,
-      'l': VOLUME.liters,
-      'cup': VOLUME.cups,
-      'tbsp': VOLUME.tablespoonsUs,
-      'tsp': VOLUME.teaspoonsUs,
+      'gram': 'g',
+      'grams': 'g',
+      'kilogram': 'kg',
+      'kilograms': 'kg',
+      'ounce': 'oz',
+      'ounces': 'oz',
+      'pound': 'lb',
+      'pounds': 'lb',
+      'milliliter': 'ml',
+      'milliliters': 'ml',
+      'liter': 'l',
+      'liters': 'l',
+      'L': 'l',
+      'cup': 'cup',
+      'cups': 'cup',
+      'tablespoon': 'tbsp',
+      'tablespoons': 'tbsp',
+      'teaspoon': 'tsp',
+      'teaspoons': 'tsp',
+      'whole': 'whole',
+      'piece': 'piece',
+      'pieces': 'piece',
+      'clove': 'clove',
+      'cloves': 'clove',
     };
 
-    // Check if we can convert between these units
-    if (unitMap.containsKey(fromUnit) && unitMap.containsKey(toUnit)) {
-      // Check if both units are of the same type (mass or volume)
-      final fromUnitType = _getUnitType(fromUnit);
-      final toUnitType = _getUnitType(toUnit);
-
-      if (fromUnitType == toUnitType) {
-        if (fromUnitType == 'mass') {
-          return quantity.convertFromTo(
-            unitMap[fromUnit] as MASS,
-            unitMap[toUnit] as MASS,
-          );
-        } else if (fromUnitType == 'volume') {
-          return quantity.convertFromTo(
-            unitMap[fromUnit] as VOLUME,
-            unitMap[toUnit] as VOLUME,
-          );
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /// Determines the type of unit (mass or volume)
-  String _getUnitType(String unit) {
-    final massUnits = ['g', 'kg', 'oz', 'lb'];
-    final volumeUnits = ['ml', 'l', 'cup', 'tbsp', 'tsp'];
-
-    if (massUnits.contains(unit)) {
-      return 'mass';
-    } else if (volumeUnits.contains(unit)) {
-      return 'volume';
-    } else {
-      return 'unknown';
-    }
-  }
-
-  /// Fallback conversion for cases units_converter doesn't handle
-  double? _fallbackConversion(
-    double quantity,
-    String fromUnit,
-    String toUnit,
-    String ingredientName,
-  ) {
-    final name = ingredientName.toLowerCase();
-
-    // Ingredient-specific conversions
-    final specificConversions = {
-      'onion': {
-        'whole': {'g': 150},
-      },
-      'garlic': {
-        'clove': {'g': 5},
-      },
-      'tomato': {
-        'whole': {'g': 120},
-      },
-      'egg': {
-        'whole': {'g': 50},
-      },
-      'potato': {
-        'whole': {'g': 200},
-      },
-      'carrot': {
-        'whole': {'g': 60},
-      },
-      'apple': {
-        'whole': {'g': 180},
-      },
-    };
-
-    // Check for ingredient-specific conversion
-    for (final entry in specificConversions.entries) {
-      if (name.contains(entry.key) &&
-          entry.value.containsKey(fromUnit) &&
-          entry.value[fromUnit]!.containsKey(toUnit)) {
-        return quantity * entry.value[fromUnit]![toUnit]!;
-      }
-    }
-
-    return null;
+    return unitMap[unitName.toLowerCase()] ?? unitName.toLowerCase();
   }
 }
