@@ -77,7 +77,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showAddDialog() {
     DialogHelper.showAddDialog(context, (ingredient) async {
       errorHandler.handleEither(
-        await _inventoryService.addIngredient(ingredient),
+        await _inventoryService.addIngredients([ingredient]),
       );
       _loadInventory();
     });

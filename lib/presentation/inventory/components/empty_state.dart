@@ -42,24 +42,6 @@ class EmptyState extends StatelessWidget {
                     size: 80,
                     color: colorScheme.primary.withOpacity(0.8),
                   ),
-                  Positioned(
-                    top: 50,
-                    right: 50,
-                    child: FaIcon(
-                      FontAwesomeIcons.utensils,
-                      size: 30,
-                      color: colorScheme.secondary.withOpacity(0.7),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 50,
-                    left: 50,
-                    child: FaIcon(
-                      FontAwesomeIcons.basketShopping,
-                      size: 30,
-                      color: colorScheme.tertiary.withOpacity(0.7),
-                    ),
-                  ),
                 ],
               ),
             ),

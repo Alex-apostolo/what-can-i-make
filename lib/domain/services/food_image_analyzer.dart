@@ -9,6 +9,7 @@ import '../models/ingredient_category.dart';
 import 'package:dartz/dartz.dart';
 import '../../core/error/failures/failure.dart';
 import '../../core/utils/generate_unique_id.dart';
+import 'shared/clean_json.dart';
 
 /// Service to analyze food images and extract ingredients using OpenAI
 class FoodImageAnalyzer {
@@ -188,7 +189,7 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
       }
 
       final content = response.choices.first.message.content!;
-      final cleanedContent = _cleanJsonContent(content);
+      final cleanedContent = cleanJsonContent(content);
 
       return _parseResponse(cleanedContent);
     } on OpenAIClientException {
@@ -239,19 +240,6 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
         ],
       ),
     );
-  }
-
-  /// Cleans the content to ensure it's valid JSON without markdown or code tags
-  String _cleanJsonContent(String content) {
-    String cleaned = content;
-
-    // Remove ```json and ``` markers
-    cleaned = cleaned.replaceAll(RegExp(r'```json\s*'), '');
-    cleaned = cleaned.replaceAll(RegExp(r'```\s*$'), '');
-    cleaned = cleaned.replaceAll('```', '');
-
-    // Remove any leading/trailing whitespace
-    return cleaned.trim();
   }
 
   /// Parses the OpenAI response and converts it to a list of Ingredients
