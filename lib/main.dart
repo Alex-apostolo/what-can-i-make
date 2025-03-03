@@ -4,6 +4,7 @@ import 'presentation/inventory/inventory_screen.dart';
 import 'presentation/theme/app_theme.dart';
 import 'data/repositories/storage_repository.dart';
 import 'core/error/error_handler.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,9 @@ void main() async {
     }
   };
 
-  runApp(MyApp(storageRepository: storageRepository));
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]).then((_) => runApp(MyApp(storageRepository: storageRepository)));
 }
 
 // Add a global navigator key

@@ -44,62 +44,31 @@ class _RecipeRecommendationsScreenState
   }
 
   Future<void> _loadIngredients() async {
+    setState(() => _isLoading = true);
+    final ingredients = await _inventoryService.loadInventory();
     setState(() {
-      _isLoading = true;
+      _availableIngredients = ingredients;
+      _isLoading = false;
     });
-
-    try {
-      final ingredients = await _inventoryService.loadInventory();
-      setState(() {
-        _availableIngredients = ingredients;
-        _isLoading = false;
-      });
-
-      // If we have preselected ingredients or all ingredients are selected,
-      // generate recommendations immediately
-      if (_selectedIngredientIds.isNotEmpty ||
-          widget.preselectedIngredients != null) {
-        _generateRecommendations();
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load ingredients: $e')));
-    }
   }
 
   Future<void> _generateRecommendations() async {
+    setState(() => _isLoading = true);
+
+    final selectedIngredients =
+        _availableIngredients
+            .where((i) => _selectedIngredientIds.contains(i.id))
+            .toList();
+
+    final recipes = await _recipeService.getRecommendedRecipes(
+      availableIngredients: selectedIngredients,
+      strictMode: _strictMode,
+    );
+
     setState(() {
-      _isLoading = true;
+      _recommendedRecipes = recipes;
+      _isLoading = false;
     });
-
-    try {
-      final selectedIngredients =
-          _availableIngredients
-              .where((i) => _selectedIngredientIds.contains(i.id))
-              .toList();
-
-      final recipes = await _recipeService.getRecommendedRecipes(
-        availableIngredients: selectedIngredients,
-        strictMode: _strictMode,
-      );
-      print(recipes);
-
-      setState(() {
-        _recommendedRecipes = recipes;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate recommendations: $e')),
-      );
-    }
   }
 
   @override
