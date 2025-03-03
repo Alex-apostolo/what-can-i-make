@@ -50,7 +50,7 @@ Return only the category name, nothing else.
     try {
       final response = await _client.createChatCompletion(
         request: CreateChatCompletionRequest(
-          model: ChatCompletionModel.modelId('gpt-4o'),
+          model: ChatCompletionModel.modelId('gpt-4o-mini'),
           messages: [
             ChatCompletionMessage.system(
               content:
