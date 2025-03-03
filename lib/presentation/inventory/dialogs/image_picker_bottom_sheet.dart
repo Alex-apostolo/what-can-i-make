@@ -1,120 +1,129 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../core/error/error_handler.dart';
+import '../../../domain/services/image_service.dart';
 
-class ImagePickerBottomSheet extends StatelessWidget {
-  final VoidCallback onCameraTap;
-  final VoidCallback onGalleryTap;
+class ImagePickerBottomSheet extends StatefulWidget {
+  final ImageService imageService;
+  final Function onImagesProcessed;
 
   const ImagePickerBottomSheet({
-    super.key,
-    required this.onCameraTap,
-    required this.onGalleryTap,
-  });
+    Key? key,
+    required this.imageService,
+    required this.onImagesProcessed,
+  }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<ImagePickerBottomSheet> createState() => _ImagePickerBottomSheetState();
+}
 
+class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24.0),
-          topRight: Radius.circular(24.0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 24.0),
-            decoration: BoxDecoration(
-              color: theme.dividerColor,
-              borderRadius: BorderRadius.circular(2.0),
-            ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Take a photo'),
+            onTap: () async {
+              await _pickAndProcessImage(ImageSource.camera);
+              Navigator.pop(context);
+            },
           ),
-
-          Text(
-            'Add Image',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Choose from gallery'),
+            onTap: () async {
+              await _pickAndProcessImage(ImageSource.gallery);
+              Navigator.pop(context);
+            },
           ),
-
-          const SizedBox(height: 24.0),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildOptionButton(
-                context,
-                icon: Icons.camera_alt_rounded,
-                label: 'Camera',
-                onTap: onCameraTap,
-                color: theme.colorScheme.primary,
-              ),
-              _buildOptionButton(
-                context,
-                icon: Icons.photo_library_rounded,
-                label: 'Gallery',
-                onTap: onGalleryTap,
-                color: theme.colorScheme.secondary,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16.0),
         ],
       ),
     );
   }
 
-  Widget _buildOptionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required Color color,
-  }) {
-    final theme = Theme.of(context);
+  Future<void> _pickAndProcessImage(ImageSource source) async {
+    bool imagesProcessed = false;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16.0),
-      child: Container(
-        width: 120,
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
+    if (source == ImageSource.camera) {
+      imagesProcessed = await _handleCameraImage();
+    } else {
+      imagesProcessed = await _handleGalleryImages();
+    }
+
+    if (imagesProcessed) {
+      widget.onImagesProcessed();
+    }
+  }
+
+  void _showProcessingDialog(int processingCount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                processingCount > 0
+                    ? 'Processing $processingCount image(s)...'
+                    : 'Processing...',
               ),
-              child: Icon(icon, color: color, size: 32.0),
-            ),
-            const SizedBox(height: 12.0),
-            Text(
-              label,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  void _closeDialog() {
+    Navigator.pop(context);
+  }
+
+  Future<bool> _handleCameraImage() async {
+    final image = errorHandler.handleEither(
+      await widget.imageService.pickCameraImage(),
+    );
+
+    // Exit if user cancelled
+    if (image == null) return false;
+
+    _showProcessingDialog(1);
+
+    // Process the image
+    await errorHandler.handleEither(
+      await widget.imageService.processImage(image),
+    );
+
+    _closeDialog();
+
+    return true;
+  }
+
+  Future<bool> _handleGalleryImages() async {
+    final pickedImages = errorHandler.handleEither(
+      await widget.imageService.pickGalleryImages(),
+    );
+
+    // Exit if no images were selected
+    if (pickedImages.isEmpty) return false;
+
+    _showProcessingDialog(pickedImages.count);
+
+    // Process the images
+    await errorHandler.handleEither(
+      await widget.imageService.processImages(pickedImages.images),
+    );
+
+    _closeDialog();
+
+    return true;
   }
 }
