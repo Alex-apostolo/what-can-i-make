@@ -19,45 +19,47 @@ class ImageService {
     : _inventoryService = inventoryService;
 
   /// Picks a single image from camera
-  Future<Either<Failure, void>> pickAndProcessCameraImage() async {
-    final image = await _picker.pickImage(source: ImageSource.camera);
-    if (image == null) {
-      return const Right(null); // User cancelled, not an error
+  Future<Either<Failure, XFile?>> pickCameraImage() async {
+    try {
+      final image = await _picker.pickImage(source: ImageSource.camera);
+      return Right(image); // May be null if user cancels
+    } on Exception {
+      return Left(ImagePickFailure('Failed to capture image'));
     }
-
-    return _processImages([image.path]);
   }
 
   /// Picks multiple images from gallery
-  Future<Either<Failure, PickedImagesResult>>
-  pickAndProcessGalleryImages() async {
-    final images = await _picker.pickMultiImage();
-    if (images.isEmpty) {
-      return const Right(
-        PickedImagesResult(processedCount: 0, limitExceeded: false),
-      );
-    }
+  Future<Either<Failure, PickedImages>> pickGalleryImages() async {
+    try {
+      final images = await _picker.pickMultiImage();
 
-    // Check if too many images were selected
-    final limitExceeded = images.length > maxImageSelection;
+      // Check if too many images were selected
+      final limitExceeded = images.length > maxImageSelection;
 
-    // Limit to max images
-    final limitedImages = images.take(maxImageSelection).toList();
+      // Limit to max images
+      final limitedImages = images.take(maxImageSelection).toList();
 
-    // Process all images at once
-    final imagePaths = limitedImages.map((image) => image.path).toList();
-    final result = await _processImages(imagePaths);
-
-    return result.fold(
-      (failure) => Left(failure),
-      (_) => Right(
-        PickedImagesResult(
-          processedCount: limitedImages.length,
+      return Right(
+        PickedImages(
+          images: limitedImages,
           limitExceeded: limitExceeded,
           totalSelected: images.length,
         ),
-      ),
-    );
+      );
+    } on Exception {
+      return Left(ImagePickFailure('Failed to pick images'));
+    }
+  }
+
+  /// Process a single image
+  Future<Either<Failure, void>> processImage(XFile image) async {
+    return _processImages([image.path]);
+  }
+
+  /// Process multiple images
+  Future<Either<Failure, void>> processImages(List<XFile> images) async {
+    final imagePaths = images.map((image) => image.path).toList();
+    return _processImages(imagePaths);
   }
 
   /// Processes images through OpenAI and saves results
@@ -88,14 +90,25 @@ class ImageService {
 }
 
 /// Result class for gallery image picking
-class PickedImagesResult {
-  final int processedCount;
+class PickedImages {
+  final List<XFile> images;
   final bool limitExceeded;
   final int totalSelected;
 
-  const PickedImagesResult({
-    required this.processedCount,
+  const PickedImages({
+    required this.images,
     required this.limitExceeded,
     this.totalSelected = 0,
   });
+
+  bool get isEmpty => images.isEmpty;
+  int get count => images.length;
+}
+
+/// Custom failures
+class ImagePickFailure extends Failure {
+  @override
+  final String message;
+
+  const ImagePickFailure(this.message) : super(message);
 }

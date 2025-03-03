@@ -65,44 +65,76 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   void _pickImages(ImageSource source) async {
     setState(() {
-      _isLoading = true;
       _isProcessingImages = true;
-      _totalImagesToProcess = 1; // Initial value, will be updated
-    });
-
-    if (source == ImageSource.camera) {
-      errorHandler.handleEither(
-        await _imageService.pickAndProcessCameraImage(),
-      );
-    } else {
-      final pickedResult = errorHandler.handleEither(
-        await _imageService.pickAndProcessGalleryImages(),
-      );
-
-      if (pickedResult.limitExceeded) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'You selected ${pickedResult.totalSelected} images. Only the first 15 will be processed.',
-            ),
-            backgroundColor: Colors.orange.shade800,
-          ),
-        );
-      }
-
-      setState(() {
-        _totalImagesToProcess = pickedResult.processedCount;
-      });
-    }
-
-    setState(() {
-      _isLoading = false;
-      _isProcessingImages = false;
       _totalImagesToProcess = 0;
     });
 
-    // Refresh inventory after processing
-    _loadInventory();
+    try {
+      // Pick images based on source
+      if (source == ImageSource.camera) {
+        await _handleCameraImage();
+      } else {
+        await _handleGalleryImages();
+      }
+
+      // Refresh inventory after successful processing
+      await _loadInventory();
+    } finally {
+      // Always reset processing state
+      setState(() {
+        _isLoading = false;
+        _isProcessingImages = false;
+        _totalImagesToProcess = 0;
+      });
+    }
+  }
+
+  // Handle camera image selection and processing
+  Future<void> _handleCameraImage() async {
+    final image = errorHandler.handleEither(
+      await _imageService.pickCameraImage(),
+    );
+
+    // Exit if user cancelled
+    if (image == null) return;
+
+    // Process the image
+    setState(() {
+      _totalImagesToProcess = 1;
+      _isLoading = true;
+    });
+    await errorHandler.handleEither(await _imageService.processImage(image));
+  }
+
+  // Handle gallery images selection and processing
+  Future<void> _handleGalleryImages() async {
+    final pickedImages = errorHandler.handleEither(
+      await _imageService.pickGalleryImages(),
+    );
+
+    // Exit if no images were selected
+    if (pickedImages.isEmpty) return;
+
+    // Show warning if too many images
+    if (pickedImages.limitExceeded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'You selected ${pickedImages.totalSelected} images. Only the first 15 will be processed.',
+          ),
+          backgroundColor: Colors.orange.shade800,
+        ),
+      );
+    }
+
+    // Process the images
+    setState(() {
+      _totalImagesToProcess = pickedImages.count;
+      _isLoading = true;
+    });
+    await errorHandler.handleEither(
+      await _imageService.processImages(pickedImages.images),
+    );
   }
 
   void _showImagePicker() {
@@ -124,21 +156,28 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _showAddDialog() {
-    DialogHelper.showAddDialog(context, _inventoryService.addIngredient);
+    DialogHelper.showAddDialog(context, (ingredient) async {
+      errorHandler.handleEither(
+        await _inventoryService.addIngredient(ingredient),
+      );
+      _loadInventory();
+    });
   }
 
   void _showEditDialog(Ingredient item) {
-    DialogHelper.showEditDialog(
-      context,
-      item,
-      _inventoryService.updateIngredient,
-    );
+    DialogHelper.showEditDialog(context, item, (updatedIngredient) async {
+      errorHandler.handleEither(
+        await _inventoryService.updateIngredient(updatedIngredient),
+      );
+      _loadInventory();
+    });
   }
 
   void _showClearConfirmationDialog() {
-    DialogHelper.showClearConfirmationDialog(context, () {
+    DialogHelper.showClearConfirmationDialog(context, () async {
       _setLoading(true);
-      _inventoryService.clearIngredients();
+      errorHandler.handleEither(await _inventoryService.clearIngredients());
+      _loadInventory();
     });
   }
 
@@ -166,7 +205,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         ? GroupedIngredientList(
                           ingredients: _inventory,
                           onEdit: _showEditDialog,
-                          onDelete: _inventoryService.deleteIngredient,
+                          onDelete: (ingredient) async {
+                            errorHandler.handleEither(
+                              await _inventoryService.deleteIngredient(
+                                ingredient,
+                              ),
+                            );
+                            _loadInventory();
+                          },
                         )
                         : EmptyState(
                           onAddPressed: _showAddDialog,
