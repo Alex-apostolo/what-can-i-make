@@ -91,125 +91,119 @@ class _RecipeRecommendationsScreenState
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Ingredient selection section
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Ingredient selection section
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Select ingredients to use:',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
+                  Text(
+                    'Select ingredients to use:',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
 
-                        // Strict mode toggle
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _strictMode,
-                              onChanged: (value) {
-                                setState(() {
-                                  _strictMode = value ?? false;
-                                });
-                              },
-                            ),
-                            const Text('Only use selected ingredients'),
-                          ],
-                        ),
-
-                        // Ingredient chips
-                        SizedBox(
-                          height: 160, // Fixed height for scrollable area
-                          child: SingleChildScrollView(
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children:
-                                  _availableIngredients.map((ingredient) {
-                                    final isSelected = _selectedIngredientIds
-                                        .contains(ingredient.id);
-                                    return FilterChip(
-                                      label: Text(ingredient.name),
-                                      selected: isSelected,
-                                      onSelected: (selected) {
-                                        setState(() {
-                                          if (selected) {
-                                            _selectedIngredientIds.add(
-                                              ingredient.id,
-                                            );
-                                          } else {
-                                            _selectedIngredientIds.remove(
-                                              ingredient.id,
-                                            );
-                                          }
-                                        });
-                                      },
-                                      backgroundColor: colorScheme.surface,
-                                      selectedColor:
-                                          colorScheme.primaryContainer,
-                                      checkmarkColor: colorScheme.primary,
-                                    );
-                                  }).toList(),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _generateRecommendations,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
-                            foregroundColor: colorScheme.onPrimary,
-                            minimumSize: const Size(double.infinity, 48),
-                          ),
-                          child: const Text('Find Recipes'),
-                        ),
-                      ],
-                    ),
+                  // Strict mode toggle
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _strictMode,
+                        onChanged: (value) {
+                          setState(() {
+                            _strictMode = value ?? false;
+                          });
+                        },
+                      ),
+                      const Text('Only use selected ingredients'),
+                    ],
                   ),
 
-                  const Divider(),
-
-                  // Recipe recommendations section
-                  Expanded(
-                    child:
-                        _recommendedRecipes.isEmpty
-                            ? Center(
-                              child: Text(
-                                _selectedIngredientIds.isEmpty
-                                    ? 'Select ingredients to get recipe recommendations'
-                                    : 'No recipes found with selected ingredients',
-                                style: theme.textTheme.bodyLarge,
-                                textAlign: TextAlign.center,
-                              ),
-                            )
-                            : ListView.builder(
-                              itemCount: _recommendedRecipes.length,
-                              padding: const EdgeInsets.all(16),
-                              itemBuilder: (context, index) {
-                                final recipe = _recommendedRecipes[index];
-                                return _RecipeCard(
-                                  recipe: recipe,
-                                  availableIngredients:
-                                      _availableIngredients
-                                          .where(
-                                            (i) => _selectedIngredientIds
-                                                .contains(i.id),
-                                          )
-                                          .map((i) => i.name.toLowerCase())
-                                          .toSet(),
-                                );
-                              },
-                            ),
+                  // Ingredient chips
+                  SizedBox(
+                    height: 160, // Fixed height for scrollable area
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children:
+                            _availableIngredients.map((ingredient) {
+                              final isSelected = _selectedIngredientIds
+                                  .contains(ingredient.id);
+                              return FilterChip(
+                                label: Text(ingredient.name),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    if (selected) {
+                                      _selectedIngredientIds.add(ingredient.id);
+                                    } else {
+                                      _selectedIngredientIds.remove(
+                                        ingredient.id,
+                                      );
+                                    }
+                                  });
+                                },
+                                backgroundColor: colorScheme.surface,
+                                selectedColor: colorScheme.primaryContainer,
+                                checkmarkColor: colorScheme.primary,
+                              );
+                            }).toList(),
+                      ),
+                    ),
                   ),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: _isLoading ? null : _generateRecommendations,
+              child: Text('Find Recipes'),
+            ),
+
+            const SizedBox(height: 20),
+
+            Expanded(
+              child:
+                  _isLoading
+                      ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Center(child: CircularProgressIndicator()),
+                          const SizedBox(height: 16),
+                          const Text('Loading recipes, please wait...'),
+                        ],
+                      )
+                      : _recommendedRecipes.isEmpty
+                      ? const Center(child: Text('No recipes to display'))
+                      : ListView.builder(
+                        itemCount: _recommendedRecipes.length,
+                        padding: const EdgeInsets.all(16),
+                        itemBuilder: (context, index) {
+                          final recipe = _recommendedRecipes[index];
+                          return _RecipeCard(
+                            recipe: recipe,
+                            availableIngredients:
+                                _availableIngredients
+                                    .where(
+                                      (i) =>
+                                          _selectedIngredientIds.contains(i.id),
+                                    )
+                                    .map((i) => i.name.toLowerCase())
+                                    .toSet(),
+                          );
+                        },
+                      ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
