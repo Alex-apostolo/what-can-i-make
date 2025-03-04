@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/services/auth_service.dart';
+import '../../data/repositories/storage_repository.dart';
 import '../inventory/inventory_screen.dart';
 import 'sign_in_screen.dart';
 
@@ -14,7 +15,7 @@ class AuthWrapper extends StatelessWidget {
     if (authService.currentUser == null) {
       return SignInScreen();
     } else {
-      return InventoryScreen(storageRepository: storageRepository); // Or your main app screen
+      return InventoryScreen(storageRepository: storageRepository);
     }
   }
 }

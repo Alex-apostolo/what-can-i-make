@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/domain/services/ingredient_combiner_service.dart';
 import '../../core/error/failures/failure.dart';
 import '../models/ingredient.dart';
-import '../../data/repositories/ingredients_repository.dart';
+import '../../data/repositories/storage_repository.dart';
 
 /// Service to manage kitchen inventory operations
 class InventoryService {

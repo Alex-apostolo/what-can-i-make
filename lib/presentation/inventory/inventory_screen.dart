@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
-import '../../data/repositories/ingredients_repository.dart';
+import '../../data/repositories/storage_repository.dart';
 import '../../domain/models/ingredient.dart';
 import '../../domain/services/inventory_service.dart';
 import '../../domain/services/image_service.dart';
@@ -12,9 +13,7 @@ import 'dialogs/image_picker_bottom_sheet.dart';
 import '../recipes/recipe_recommendations_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
-  final StorageRepository storageRepository;
-
-  const InventoryScreen({super.key, required this.storageRepository});
+  const InventoryScreen({super.key});
 
   @override
   State<InventoryScreen> createState() => _InventoryScreenState();
@@ -33,10 +32,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void initState() {
     super.initState();
 
-    // Initialize services
-    _inventoryService = InventoryService(
-      storageRepository: widget.storageRepository,
+    final storageRepository = Provider.of<StorageRepository>(
+      context,
+      listen: false,
     );
+
+    // Initialize services
+    _inventoryService = InventoryService(storageRepository: storageRepository);
 
     _imageService = ImageService(inventoryService: _inventoryService);
 

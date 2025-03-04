@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'presentation/theme/app_theme.dart';
-import 'data/repositories/ingredients_repository.dart';
+import 'data/repositories/storage_repository.dart';
 import 'core/error/error_handler.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -48,7 +48,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthService())],
+      providers: [
+        // Provide AuthService
+        ChangeNotifierProvider(create: (_) => AuthService()),
+
+        // Provide StorageRepository
+        Provider<StorageRepository>.value(value: storageRepository),
+      ],
       child: MaterialApp(
         title: 'Kitchen Inventory',
         theme: AppTheme.lightTheme(),

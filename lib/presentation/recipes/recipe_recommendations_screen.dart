@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:what_can_i_make/data/repositories/ingredients_repository.dart';
+import 'package:what_can_i_make/data/repositories/storage_repository.dart';
 import '../../core/error/error_handler.dart';
 import '../../domain/models/ingredient.dart';
 import '../../domain/models/recipe.dart';
