@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "691737552013",
+    "project_id": "kitchen-inventory-c7753",
+    "storage_bucket": "kitchen-inventory-c7753.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:691737552013:android:5cf6dbf58ef63b9738eec4",
+        "android_client_info": {
+          "package_name": "com.example.what_can_i_make"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAB2PvzdZSTDM_jFHJGnpeVebs3Gi5ypvc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

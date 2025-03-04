@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'presentation/inventory/inventory_screen.dart';
+import 'firebase_options.dart';
 import 'presentation/theme/app_theme.dart';
 import 'data/repositories/ingredients_repository.dart';
 import 'core/error/error_handler.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'domain/services/auth_service.dart';
+import 'presentation/auth/auth_wrapper.dart';
+import 'presentation/auth/sign_in_screen.dart';
+import 'presentation/auth/sign_up_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final storageRepository = await StorageRepository.initialize();
 
   // Set up global error handler
@@ -40,13 +47,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Kitchen Inventory',
-      theme: AppTheme.lightTheme(),
-      darkTheme: AppTheme.darkTheme(),
-      themeMode: ThemeMode.system, // Respect system theme setting
-      navigatorKey: navigatorKey,
-      home: InventoryScreen(storageRepository: storageRepository),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => AuthService())],
+      child: MaterialApp(
+        title: 'Kitchen Inventory',
+        theme: AppTheme.lightTheme(),
+        darkTheme: AppTheme.darkTheme(),
+        themeMode: ThemeMode.system, // Respect system theme setting
+        navigatorKey: navigatorKey,
+        home: AuthWrapper(),
+        routes: {
+          SignInScreen.routeName: (ctx) => SignInScreen(),
+          SignUpScreen.routeName: (ctx) => SignUpScreen(),
+        },
+      ),
     );
   }
 }
