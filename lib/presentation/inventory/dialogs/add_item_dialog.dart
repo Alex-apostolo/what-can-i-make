@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../domain/models/ingredient.dart';
 import '../../../core/utils/generate_unique_id.dart';
 import '../../../domain/models/measurement_unit.dart';
@@ -22,12 +23,13 @@ class _AddItemDialogState extends State<AddItemDialog> {
   MeasurementUnit _selectedUnit = MeasurementUnit.piece;
   bool _isLoading = false;
   final _categoryService = CategoryService();
+  late final ErrorHandler _errorHandler;
 
   @override
   void initState() {
     super.initState();
-    // Set default unit
     _selectedUnit = MeasurementUnit.piece;
+    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
   }
 
   @override
@@ -52,7 +54,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
       final category = categoryResult.fold((failure) {
         // If there's an error, use the default category
-        errorHandler.handleFailure(failure);
+        _errorHandler.handleFailure(failure);
         return IngredientCategory.other;
       }, (category) => category);
 

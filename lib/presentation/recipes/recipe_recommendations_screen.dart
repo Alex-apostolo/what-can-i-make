@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:what_can_i_make/data/repositories/storage_repository.dart';
 import '../../core/error/error_handler.dart';
 import '../../domain/models/ingredient.dart';
@@ -19,11 +20,9 @@ class RecipeRecommendationsScreen extends StatefulWidget {
 
 class _RecipeRecommendationsScreenState
     extends State<RecipeRecommendationsScreen> {
-  final RecipeRecommendationService _recipeService =
-      RecipeRecommendationService();
-  final InventoryService _inventoryService = InventoryService(
-    storageRepository: StorageRepository(),
-  );
+  final RecipeRecommendationService _recipeService = RecipeRecommendationService();
+  late InventoryService _inventoryService;
+  late ErrorHandler _errorHandler;
 
   List<Ingredient> _availableIngredients = [];
   Set<String> _selectedIngredientIds = {};
@@ -34,6 +33,12 @@ class _RecipeRecommendationsScreenState
   @override
   void initState() {
     super.initState();
+    
+    // Initialize services from providers
+    final storageRepository = Provider.of<StorageRepository>(context, listen: false);
+    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
+    _inventoryService = InventoryService(storageRepository: storageRepository);
+    
     _loadIngredients();
 
     // If ingredients were preselected, mark them as selected
@@ -45,7 +50,7 @@ class _RecipeRecommendationsScreenState
 
   Future<void> _loadIngredients() async {
     setState(() => _isLoading = true);
-    final ingredients = errorHandler.handleEither(
+    final ingredients = _errorHandler.handleEither(
       await _inventoryService.getIngredients(),
     );
     setState(() {
@@ -62,7 +67,7 @@ class _RecipeRecommendationsScreenState
             .where((i) => _selectedIngredientIds.contains(i.id))
             .toList();
 
-    final recipes = errorHandler.handleEither(
+    final recipes = _errorHandler.handleEither(
       await _recipeService.getRecommendedRecipes(
         availableIngredients: selectedIngredients,
         strictMode: _strictMode,

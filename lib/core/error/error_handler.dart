@@ -1,10 +1,29 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/material.dart';
 import 'failures/failure.dart';
 
-/// Global error handler for the application
 class ErrorHandler {
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  ErrorHandler({required this.navigatorKey});
+
   /// Function to show error messages to the user
-  void Function(Failure) showError = (_) {};
+  void showError(Failure failure) {
+    final context = navigatorKey.currentContext;
+
+    if (context == null) {
+      debugPrint("ErrorHandler: Context is null, cannot show error");
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(failure.message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.fixed,
+      ),
+    );
+  }
 
   /// Handles a failure by showing an error message
   void handleFailure(Failure failure) {
@@ -20,6 +39,3 @@ class ErrorHandler {
     }, (value) => value);
   }
 }
-
-/// Global instance of the error handler
-final errorHandler = ErrorHandler();

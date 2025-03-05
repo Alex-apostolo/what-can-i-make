@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../domain/models/ingredient.dart';
 import '../../../domain/models/measurement_unit.dart';
 import '../../../domain/models/ingredient_category.dart';
@@ -27,6 +28,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
   bool _isLoading = false;
   bool _nameChanged = false;
   final _categoryService = CategoryService();
+  late final ErrorHandler _errorHandler;
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
       text: widget.ingredient.quantity.toString(),
     );
     _selectedUnit = widget.ingredient.unit;
+    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
 
     // Listen for name changes to trigger recategorization
     _nameController.addListener(() {
@@ -72,7 +75,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
 
         category = categoryResult.fold((failure) {
           // If there's an error, use the default category
-          errorHandler.handleFailure(failure);
+          _errorHandler.handleFailure(failure);
           return IngredientCategory.other;
         }, (category) => category);
       }

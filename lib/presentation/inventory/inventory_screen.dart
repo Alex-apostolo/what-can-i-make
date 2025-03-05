@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
-import '../../data/repositories/storage_repository.dart';
 import '../../domain/models/ingredient.dart';
 import '../../domain/services/inventory_service.dart';
-import '../../domain/services/image_service.dart';
 import '../shared/dialog_helper.dart';
 import 'components/app_bar.dart';
 import 'components/empty_state.dart';
@@ -20,27 +18,17 @@ class InventoryScreen extends StatefulWidget {
 }
 
 class _InventoryScreenState extends State<InventoryScreen> {
-  // State variables
   List<Ingredient> _inventory = [];
   bool _isLoading = true;
-
-  // Services
   late final InventoryService _inventoryService;
-  late final ImageService _imageService;
+  late final ErrorHandler _errorHandler;
 
   @override
   void initState() {
     super.initState();
 
-    final storageRepository = Provider.of<StorageRepository>(
-      context,
-      listen: false,
-    );
-
-    // Initialize services
-    _inventoryService = InventoryService(storageRepository: storageRepository);
-
-    _imageService = ImageService(inventoryService: _inventoryService);
+    _inventoryService = Provider.of<InventoryService>(context, listen: false);
+    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
 
     _loadInventory();
   }
@@ -48,7 +36,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Future<void> _loadInventory() async {
     _setLoading(true);
 
-    final ingredients = errorHandler.handleEither(
+    final ingredients = _errorHandler.handleEither(
       await _inventoryService.getIngredients(),
     );
 
@@ -69,16 +57,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context: context,
       isScrollControlled: true,
       builder:
-          (context) => ImagePickerBottomSheet(
-            imageService: _imageService,
-            onImagesProcessed: _loadInventory,
-          ),
+          (context) =>
+              ImagePickerBottomSheet(onImagesProcessed: _loadInventory),
     );
   }
 
   void _showAddDialog() {
     DialogHelper.showAddDialog(context, (ingredient) async {
-      errorHandler.handleEither(
+      _errorHandler.handleEither(
         await _inventoryService.addIngredients([ingredient]),
       );
       _loadInventory();
@@ -87,7 +73,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   void _showEditDialog(Ingredient item) {
     DialogHelper.showEditDialog(context, item, (updatedIngredient) async {
-      errorHandler.handleEither(
+      _errorHandler.handleEither(
         await _inventoryService.updateIngredient(updatedIngredient),
       );
       _loadInventory();
@@ -97,7 +83,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showClearConfirmationDialog() {
     DialogHelper.showClearConfirmationDialog(context, () async {
       _setLoading(true);
-      errorHandler.handleEither(await _inventoryService.clearIngredients());
+      _errorHandler.handleEither(await _inventoryService.clearIngredients());
       _loadInventory();
     });
   }
@@ -129,7 +115,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           ingredients: _inventory,
                           onEdit: _showEditDialog,
                           onDelete: (ingredient) async {
-                            errorHandler.handleEither(
+                            _errorHandler.handleEither(
                               await _inventoryService.deleteIngredient(
                                 ingredient,
                               ),
@@ -187,12 +173,5 @@ class _InventoryScreenState extends State<InventoryScreen> {
               : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
-  }
-
-  @override
-  void dispose() {
-    _inventoryService.dispose();
-    _imageService.dispose();
-    super.dispose();
   }
 }

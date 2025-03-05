@@ -1,23 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../../../core/error/error_handler.dart';
 import '../../../domain/services/image_service.dart';
+import '../../../domain/services/inventory_service.dart';
 
 class ImagePickerBottomSheet extends StatefulWidget {
-  final ImageService imageService;
   final Function onImagesProcessed;
 
-  const ImagePickerBottomSheet({
-    Key? key,
-    required this.imageService,
-    required this.onImagesProcessed,
-  }) : super(key: key);
+  const ImagePickerBottomSheet({required this.onImagesProcessed});
 
   @override
   State<ImagePickerBottomSheet> createState() => _ImagePickerBottomSheetState();
 }
 
 class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
+  late final ImageService _imageService;
+  late final ErrorHandler _errorHandler;
+
+  @override
+  void initState() {
+    super.initState();
+    final inventoryService = Provider.of<InventoryService>(
+      context,
+      listen: false,
+    );
+    _imageService = ImageService(inventoryService: inventoryService);
+    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -88,8 +99,8 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
   }
 
   Future<bool> _handleCameraImage() async {
-    final image = errorHandler.handleEither(
-      await widget.imageService.pickCameraImage(),
+    final image = _errorHandler.handleEither(
+      await _imageService.pickCameraImage(),
     );
 
     // Exit if user cancelled
@@ -98,8 +109,8 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
     _showProcessingDialog(1);
 
     // Process the image
-    await errorHandler.handleEither(
-      await widget.imageService.processImage(image),
+    await _errorHandler.handleEither(
+      await _imageService.processImage(image),
     );
 
     _closeDialog();
@@ -108,8 +119,8 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
   }
 
   Future<bool> _handleGalleryImages() async {
-    final pickedImages = errorHandler.handleEither(
-      await widget.imageService.pickGalleryImages(),
+    final pickedImages = _errorHandler.handleEither(
+      await _imageService.pickGalleryImages(),
     );
 
     // Exit if no images were selected
@@ -118,8 +129,8 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
     _showProcessingDialog(pickedImages.count);
 
     // Process the images
-    await errorHandler.handleEither(
-      await widget.imageService.processImages(pickedImages.images),
+    await _errorHandler.handleEither(
+      await _imageService.processImages(pickedImages.images),
     );
 
     _closeDialog();

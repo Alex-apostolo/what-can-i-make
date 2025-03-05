@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:what_can_i_make/core/database/database.dart';
 import 'firebase_options.dart';
 import 'presentation/theme/app_theme.dart';
 import 'data/repositories/storage_repository.dart';
@@ -12,48 +13,41 @@ import 'presentation/auth/auth_wrapper.dart';
 import 'presentation/auth/sign_in_screen.dart';
 import 'presentation/auth/sign_up_screen.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  final storageRepository = await StorageRepository.initialize();
 
-  // Set up global error handler
-  errorHandler.showError = (failure) {
-    final context = navigatorKey.currentContext;
-    if (context != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(failure.message),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.fixed,
-        ),
-      );
-    }
-  };
+  final database = await Database.initializeDatabase('kitchen_inventory.db');
+  final storageRepository = StorageRepository(database: database);
+  final errorHandler = ErrorHandler(navigatorKey: navigatorKey);
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]).then((_) => runApp(MyApp(storageRepository: storageRepository)));
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
+    (_) => runApp(
+      MyApp(storageRepository: storageRepository, errorHandler: errorHandler),
+    ),
+  );
 }
-
-// Add a global navigator key
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class MyApp extends StatelessWidget {
   final StorageRepository storageRepository;
+  final ErrorHandler errorHandler;
 
-  const MyApp({super.key, required this.storageRepository});
+  const MyApp({
+    super.key,
+    required this.storageRepository,
+    required this.errorHandler,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Provide AuthService
         ChangeNotifierProvider(create: (_) => AuthService()),
-
-        // Provide StorageRepository
         Provider<StorageRepository>.value(value: storageRepository),
+        Provider<ErrorHandler>.value(value: errorHandler),
       ],
       child: MaterialApp(
         title: 'Kitchen Inventory',
