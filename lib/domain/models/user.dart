@@ -24,10 +24,10 @@ class User {
 
   User copyWith({String? displayName, String? photoUrl}) {
     return User(
-      id: this.id,
-      email: this.email,
-      displayName: displayName ?? this.displayName,
-      photoUrl: photoUrl ?? this.photoUrl,
+      id: id,
+      email: email,
+      displayName: displayName ?? displayName,
+      photoUrl: photoUrl ?? photoUrl,
     );
   }
 }
