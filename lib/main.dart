@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:what_can_i_make/core/database/database.dart';
 import 'firebase_options.dart';
-import 'presentation/theme/app_theme.dart';
+import 'theme/app_theme.dart';
 import 'data/repositories/storage_repository.dart';
 import 'core/error/error_handler.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'domain/services/auth_service.dart';
-import 'presentation/auth/auth_wrapper.dart';
-import 'presentation/auth/sign_in_screen.dart';
-import 'presentation/auth/sign_up_screen.dart';
+import 'features/auth/domain/auth_service.dart';
+import 'features/auth/presentation/auth_wrapper.dart';
+import 'features/auth/presentation/sign_in_screen.dart';
+import 'features/auth/presentation/sign_up_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 

@@ -1,8 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/utils/generate_unique_id.dart';
-import '../../core/error/failures/failure.dart';
-import '../../domain/models/ingredient.dart';
+import 'package:what_can_i_make/core/error/failures/failure.dart';
+import 'package:what_can_i_make/core/models/ingredient.dart';
 
 /// Repository for handling persistent storage
 class StorageRepository {
