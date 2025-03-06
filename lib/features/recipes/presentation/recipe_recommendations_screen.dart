@@ -45,6 +45,10 @@ class _RecipeRecommendationsScreenState
     final ingredients = _errorHandler.handleEither(
       await _inventoryService.getIngredients(),
     );
+    ingredients.forEach((e) {
+      _selectedIngredientIds.add(e.id.toString());
+    });
+
     setState(() {
       _availableIngredients = ingredients;
       _isLoading = false;
