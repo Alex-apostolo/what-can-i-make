@@ -21,12 +21,9 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
   @override
   void initState() {
     super.initState();
-    final inventoryService = Provider.of<InventoryService>(
-      context,
-      listen: false,
-    );
+    final inventoryService = context.read<InventoryService>();
+    _errorHandler = context.read<ErrorHandler>();
     _imageService = ImageService(inventoryService: inventoryService);
-    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
   }
 
   @override
@@ -72,6 +69,7 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
   }
 
   void _showProcessingDialog(int processingCount) {
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -95,6 +93,7 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
   }
 
   void _closeDialog() {
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
@@ -109,9 +108,7 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
     _showProcessingDialog(1);
 
     // Process the image
-    await _errorHandler.handleEither(
-      await _imageService.processImage(image),
-    );
+    await _errorHandler.handleEither(await _imageService.processImage(image));
 
     _closeDialog();
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
+import 'package:what_can_i_make/domain/services/inventory_service.dart';
 import '../../domain/models/ingredient.dart';
-import '../../domain/services/inventory_service.dart';
 import '../shared/dialog_helper.dart';
 import 'components/app_bar.dart';
 import 'components/empty_state.dart';
@@ -26,11 +26,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-
-    _inventoryService = Provider.of<InventoryService>(context, listen: false);
-    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
-
-    _loadInventory();
+    Future.microtask(() {
+      _inventoryService = context.read<InventoryService>();
+      _errorHandler = context.read<ErrorHandler>();
+      _loadInventory();
+    });
   }
 
   Future<void> _loadInventory() async {
@@ -40,6 +40,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       await _inventoryService.getIngredients(),
     );
 
+    if (!mounted) return;
     setInventory(ingredients);
     _setLoading(false);
   }
@@ -67,6 +68,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       _errorHandler.handleEither(
         await _inventoryService.addIngredients([ingredient]),
       );
+      if (!mounted) return;
       _loadInventory();
     });
   }
@@ -76,6 +78,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       _errorHandler.handleEither(
         await _inventoryService.updateIngredient(updatedIngredient),
       );
+      if (!mounted) return;
       _loadInventory();
     });
   }
@@ -84,6 +87,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     DialogHelper.showClearConfirmationDialog(context, () async {
       _setLoading(true);
       _errorHandler.handleEither(await _inventoryService.clearIngredients());
+      if (!mounted) return;
       _loadInventory();
     });
   }
@@ -120,6 +124,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ingredient,
                               ),
                             );
+                            if (!mounted) return;
                             _loadInventory();
                           },
                         )
