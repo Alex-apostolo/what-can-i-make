@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:what_can_i_make/domain/services/inventory_service.dart';
 import '../../recipes/recipe_recommendations_screen.dart';
 import '../dialogs/image_picker_bottom_sheet.dart';
-import '../../../domain/models/ingredient.dart';
 
 class InventoryActionButtons extends StatelessWidget {
   final VoidCallback onImagesProcessed;
@@ -25,7 +22,6 @@ class InventoryActionButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final inventoryService = context.read<InventoryService>();
 
     return Row(
       mainAxisSize: MainAxisSize.min,
