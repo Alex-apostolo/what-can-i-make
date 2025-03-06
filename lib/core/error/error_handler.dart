@@ -1,9 +1,11 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'failures/failure.dart';
+import 'package:what_can_i_make/core/utils/logger.dart';
 
 class ErrorHandler {
   final GlobalKey<NavigatorState> navigatorKey;
+  final Logger _logger = Logger('ErrorHandler');
 
   ErrorHandler({required this.navigatorKey});
 
@@ -11,8 +13,10 @@ class ErrorHandler {
   void showError(Failure failure) {
     final context = navigatorKey.currentContext;
 
+    _logger.e('Failure occurred', failure);
+
     if (context == null) {
-      debugPrint("ErrorHandler: Context is null, cannot show error");
+      _logger.w("Context is null, cannot show error snackbar");
       return;
     }
 
