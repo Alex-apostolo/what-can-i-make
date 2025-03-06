@@ -6,8 +6,10 @@ import 'sign_up_screen.dart';
 class SignInScreen extends StatefulWidget {
   static const routeName = '/sign-in';
 
+  const SignInScreen({super.key});
+
   @override
-  _SignInScreenState createState() => _SignInScreenState();
+  State<SignInScreen> createState() => _SignInScreenState();
 }
 
 class _SignInScreenState extends State<SignInScreen> {
@@ -16,12 +18,12 @@ class _SignInScreenState extends State<SignInScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  late AuthService _authService;
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _authService = context.read<AuthService>();
   }
 
   Future<void> _signIn() async {
@@ -32,26 +34,21 @@ class _SignInScreenState extends State<SignInScreen> {
       _errorMessage = null;
     });
 
-    try {
-      await Provider.of<AuthService>(
-        context,
-        listen: false,
-      ).signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+    final user = await _authService.signInWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
 
-      // Navigate to home screen or main app screen
-      Navigator.of(context).pushReplacementNamed('/');
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    user.fold(
+      (failure) => setState(() {
+        _errorMessage = failure.message;
+      }),
+      (user) => Navigator.of(context).pushReplacementNamed('/'),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -110,11 +107,11 @@ class _SignInScreenState extends State<SignInScreen> {
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _isLoading ? null : _signIn,
-                child:
-                    _isLoading ? CircularProgressIndicator() : Text('Sign In'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
+                child:
+                    _isLoading ? CircularProgressIndicator() : Text('Sign In'),
               ),
               SizedBox(height: 16),
               TextButton(
@@ -164,10 +161,9 @@ class _SignInScreenState extends State<SignInScreen> {
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    await Provider.of<AuthService>(
-                      context,
-                      listen: false,
-                    ).resetPassword(emailController.text.trim());
+                    await _authService.resetPassword(
+                      emailController.text.trim(),
+                    );
                     Navigator.of(ctx).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Password reset email sent!')),
@@ -187,5 +183,12 @@ class _SignInScreenState extends State<SignInScreen> {
             ],
           ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

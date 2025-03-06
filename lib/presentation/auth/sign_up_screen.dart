@@ -5,8 +5,10 @@ import '../../domain/services/auth_service.dart';
 class SignUpScreen extends StatefulWidget {
   static const routeName = '/sign-up';
 
+  const SignUpScreen({super.key});
+
   @override
-  _SignUpScreenState createState() => _SignUpScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
@@ -18,15 +20,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -35,33 +28,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _errorMessage = null;
     });
 
-    try {
-      final authService = Provider.of<AuthService>(context, listen: false);
+    final authService = context.read<AuthService>();
 
-      // Create user with email and password
-      final user = await authService.createUserWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
+    final createUserResult = await authService.createUserWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    if (createUserResult.isLeft()) {
+      createUserResult.fold(
+        (failure) => setState(() => _errorMessage = failure.message),
+        (_) => null,
       );
-
-      // Update display name
-      if (user != null) {
-        await authService.updateProfile(
-          displayName: _nameController.text.trim(),
-        );
-      }
-
-      // Navigate to home screen or main app screen
-      Navigator.of(context).pushReplacementNamed('/');
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      return;
     }
+
+    final updateProfileResult = await authService.updateProfile(
+      displayName: _nameController.text.trim(),
+    );
+
+    updateProfileResult.fold(
+      (failure) => setState(() {
+        _errorMessage = failure.message;
+      }),
+      (user) => Navigator.of(context).pushReplacementNamed('/'),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -156,13 +151,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _signUp,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                  ),
                   child:
                       _isLoading
                           ? CircularProgressIndicator()
                           : Text('Sign Up'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                  ),
                 ),
                 SizedBox(height: 16),
                 TextButton(
@@ -177,5 +172,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 }

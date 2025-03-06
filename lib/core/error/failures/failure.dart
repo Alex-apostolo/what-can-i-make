@@ -41,3 +41,7 @@ class DatabaseQueryFailure extends Failure {
 class ItemNotFoundFailure extends Failure {
   const ItemNotFoundFailure(String id) : super('Item with ID $id not found');
 }
+
+class AuthFailure extends Failure {
+  const AuthFailure(String message) : super(message);
+}
