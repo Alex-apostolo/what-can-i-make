@@ -12,7 +12,7 @@ class AppLogger extends Logger {
               methodCount: 2, // Stack trace depth
               errorMethodCount: 8, // Stack trace depth for errors
               lineLength: 60, // Log line width
-              colors: true, // Enable ANSI colors
+              colors: false, // Enable ANSI colors
               printEmojis: true, // Use emojis in logs
             ),
       );
