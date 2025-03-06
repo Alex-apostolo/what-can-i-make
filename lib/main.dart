@@ -13,6 +13,7 @@ import 'features/inventory/domain/inventory_service.dart';
 import 'features/inventory/presentation/inventory_screen.dart';
 import 'features/recipes/presentation/recipe_recommendations_screen.dart';
 import 'package:what_can_i_make/core/initialization/app_initializer.dart';
+import 'features/auth/presentation/account_screen.dart';
 
 // Global navigator key for app-wide navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -92,6 +93,7 @@ class MyApp extends StatelessWidget {
       InventoryScreen.routeName: (context) => InventoryScreen(),
       RecipeRecommendationsScreen.routeName:
           (context) => RecipeRecommendationsScreen(),
+      AccountScreen.routeName: (context) => AccountScreen(),
     };
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:what_can_i_make/features/auth/presentation/account_screen.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool hasItems;
@@ -34,25 +35,39 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       centerTitle: true,
+      leading:
+          hasItems
+              ? IconButton(
+                icon: const FaIcon(FontAwesomeIcons.trashCan, size: 18),
+                tooltip: 'Clear all items',
+                onPressed: onClearPressed,
+                style: IconButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                  backgroundColor: colorScheme.errorContainer.withOpacity(0.2),
+                ),
+              )
+              : null,
       actions: [
         if (hasItems)
           IconButton(
-            icon: const FaIcon(FontAwesomeIcons.trashCan, size: 18),
-            tooltip: 'Clear all items',
-            onPressed: onClearPressed,
+            icon: const FaIcon(FontAwesomeIcons.circlePlus, size: 18),
+            tooltip: 'Add item manually',
+            onPressed: onAddPressed,
             style: IconButton.styleFrom(
-              foregroundColor: colorScheme.error,
-              backgroundColor: colorScheme.errorContainer.withOpacity(0.2),
+              foregroundColor: colorScheme.primary,
+              backgroundColor: colorScheme.primaryContainer.withOpacity(0.2),
             ),
           ),
         const SizedBox(width: 8),
         IconButton(
-          icon: const FaIcon(FontAwesomeIcons.circlePlus, size: 18),
-          tooltip: 'Add item manually',
-          onPressed: onAddPressed,
+          icon: const Icon(Icons.account_circle),
+          tooltip: 'Account',
+          onPressed: () {
+            Navigator.of(context).pushNamed(AccountScreen.routeName);
+          },
           style: IconButton.styleFrom(
-            foregroundColor: colorScheme.primary,
-            backgroundColor: colorScheme.primaryContainer.withOpacity(0.2),
+            foregroundColor: colorScheme.onSurface,
+            backgroundColor: colorScheme.surfaceVariant.withOpacity(0.2),
           ),
         ),
         const SizedBox(width: 8),
