@@ -1,24 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../recipes/presentation/recipe_recommendations_screen.dart';
-import '../dialogs/image_picker_bottom_sheet.dart';
+import 'package:what_can_i_make/features/recipes/presentation/recipe_recommendations_screen.dart';
 
 class InventoryActionButtons extends StatelessWidget {
   final VoidCallback onImagesProcessed;
+  final VoidCallback showImagePicker;
 
-  const InventoryActionButtons({super.key, required this.onImagesProcessed});
-
-  void _showImagePicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (modalContext) => ImagePickerBottomSheet(
-            onImagesProcessed: onImagesProcessed,
-            parentContext: context,
-          ),
-    );
-  }
+  const InventoryActionButtons({
+    super.key,
+    required this.onImagesProcessed,
+    required this.showImagePicker,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +22,7 @@ class InventoryActionButtons extends StatelessWidget {
         FloatingActionButton(
           heroTag: 'recommend_recipes',
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RecipeRecommendationsScreen(),
-              ),
-            );
+            Navigator.pushNamed(context, RecipeRecommendationsScreen.routeName);
           },
           backgroundColor: colorScheme.secondaryContainer,
           foregroundColor: colorScheme.onSecondaryContainer,
@@ -47,7 +33,7 @@ class InventoryActionButtons extends StatelessWidget {
         // Camera button
         FloatingActionButton(
           heroTag: 'scan_items',
-          onPressed: () => _showImagePicker(context),
+          onPressed: showImagePicker,
           backgroundColor: colorScheme.primaryContainer,
           foregroundColor: colorScheme.onPrimaryContainer,
           tooltip: 'Scan Items',

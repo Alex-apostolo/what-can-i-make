@@ -12,6 +12,9 @@ import 'features/auth/domain/auth_service.dart';
 import 'features/auth/presentation/auth_wrapper.dart';
 import 'features/auth/presentation/sign_in_screen.dart';
 import 'features/auth/presentation/sign_up_screen.dart';
+import 'features/inventory/domain/inventory_service.dart';
+import 'features/inventory/presentation/inventory_screen.dart';
+import 'features/recipes/presentation/recipe_recommendations_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -21,24 +24,33 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   final database = await Database.initializeDatabase('kitchen_inventory.db');
-  final storageRepository = StorageRepository(database: database);
   final errorHandler = ErrorHandler(navigatorKey: navigatorKey);
+  final storageRepository = StorageRepository(database: database);
+  final inventoryService = InventoryService(
+    storageRepository: storageRepository,
+  );
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then(
     (_) => runApp(
-      MyApp(storageRepository: storageRepository, errorHandler: errorHandler),
+      MyApp(
+        errorHandler: errorHandler,
+        storageRepository: storageRepository,
+        inventoryService: inventoryService,
+      ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  final StorageRepository storageRepository;
   final ErrorHandler errorHandler;
+  final StorageRepository storageRepository;
+  final InventoryService inventoryService;
 
   const MyApp({
     super.key,
-    required this.storageRepository,
     required this.errorHandler,
+    required this.storageRepository,
+    required this.inventoryService,
   });
 
   @override
@@ -46,8 +58,9 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
-        Provider<StorageRepository>.value(value: storageRepository),
         Provider<ErrorHandler>.value(value: errorHandler),
+        Provider<StorageRepository>.value(value: storageRepository),
+        Provider<InventoryService>.value(value: inventoryService),
       ],
       child: MaterialApp(
         title: 'Kitchen Inventory',
@@ -57,8 +70,11 @@ class MyApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         home: AuthWrapper(),
         routes: {
-          SignInScreen.routeName: (ctx) => SignInScreen(),
-          SignUpScreen.routeName: (ctx) => SignUpScreen(),
+          SignInScreen.routeName: (context) => SignInScreen(),
+          SignUpScreen.routeName: (context) => SignUpScreen(),
+          InventoryScreen.routeName: (context) => InventoryScreen(),
+          RecipeRecommendationsScreen.routeName:
+              (context) => RecipeRecommendationsScreen(),
         },
       ),
     );

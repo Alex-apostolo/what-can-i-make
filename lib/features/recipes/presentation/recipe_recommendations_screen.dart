@@ -7,6 +7,8 @@ import 'package:what_can_i_make/core/models/ingredient.dart';
 import 'package:what_can_i_make/core/models/recipe.dart';
 
 class RecipeRecommendationsScreen extends StatefulWidget {
+  static const routeName = '/recipe_recommendations';
+
   const RecipeRecommendationsScreen({super.key});
 
   @override

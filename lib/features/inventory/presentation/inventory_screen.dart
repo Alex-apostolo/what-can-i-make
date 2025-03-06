@@ -11,6 +11,8 @@ import 'dialogs/image_picker_bottom_sheet.dart';
 import '../domain/inventory_service.dart';
 
 class InventoryScreen extends StatefulWidget {
+  static const routeName = '/inventory';
+
   const InventoryScreen({super.key});
 
   @override
@@ -137,7 +139,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
       floatingActionButton:
           hasItems
-              ? InventoryActionButtons(onImagesProcessed: _loadInventory)
+              ? InventoryActionButtons(
+                onImagesProcessed: _loadInventory,
+                showImagePicker: _showImagePicker,
+              )
               : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
