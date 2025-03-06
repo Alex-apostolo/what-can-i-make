@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:what_can_i_make/data/repositories/storage_repository.dart';
 import '../../core/error/error_handler.dart';
 import '../../domain/models/ingredient.dart';
 import '../../domain/models/recipe.dart';
@@ -8,10 +7,7 @@ import '../../domain/services/recipe_recommendation_service.dart';
 import '../../domain/services/inventory_service.dart';
 
 class RecipeRecommendationsScreen extends StatefulWidget {
-  final List<Ingredient>? preselectedIngredients;
-
-  const RecipeRecommendationsScreen({Key? key, this.preselectedIngredients})
-    : super(key: key);
+  const RecipeRecommendationsScreen({super.key});
 
   @override
   State<RecipeRecommendationsScreen> createState() =>
@@ -36,17 +32,10 @@ class _RecipeRecommendationsScreenState
     super.initState();
 
     // Initialize services from providers
-    final storageRepository = context.read<StorageRepository>();
     _errorHandler = context.read<ErrorHandler>();
-    _inventoryService = InventoryService(storageRepository: storageRepository);
+    _inventoryService = context.read<InventoryService>();
 
     _loadIngredients();
-
-    // If ingredients were preselected, mark them as selected
-    if (widget.preselectedIngredients != null) {
-      _selectedIngredientIds =
-          widget.preselectedIngredients!.map((i) => i.id).toSet();
-    }
   }
 
   Future<void> _loadIngredients() async {

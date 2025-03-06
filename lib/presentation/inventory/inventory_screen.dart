@@ -7,8 +7,8 @@ import '../shared/dialog_helper.dart';
 import 'components/app_bar.dart';
 import 'components/empty_state.dart';
 import 'components/grouped_ingredient_list.dart';
+import 'components/inventory_action_buttons.dart';
 import 'dialogs/image_picker_bottom_sheet.dart';
-import '../recipes/recipe_recommendations_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -95,7 +95,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final hasItems = _inventory.isNotEmpty;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: HomeAppBar(
@@ -135,46 +134,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
       floatingActionButton:
           hasItems
-              ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Recipe recommendation button
-                  FloatingActionButton(
-                    heroTag: 'recommend_recipes',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => RecipeRecommendationsScreen(
-                                preselectedIngredients: _inventory,
-                              ),
-                        ),
-                      );
-                    },
-                    backgroundColor: colorScheme.tertiaryContainer,
-                    foregroundColor: colorScheme.onTertiaryContainer,
-                    tooltip: 'Find Recipes',
-                    elevation: 4,
-                    child: const Icon(Icons.restaurant_menu, size: 28),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Camera button
-                  FloatingActionButton(
-                    onPressed: _showImagePicker,
-                    tooltip: 'Scan items with camera',
-                    elevation: 4,
-                    highlightElevation: 8,
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.0),
-                    ),
-                    child: Icon(Icons.add_a_photo_rounded, size: 24.0),
-                  ),
-                ],
-              )
+              ? InventoryActionButtons(onImagesProcessed: _loadInventory)
               : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
