@@ -23,6 +23,7 @@ class RecipeRecommendationService {
   }) => '''
 Generate 3 recipe recommendations using these ingredients: $availableIngredients.
 ${strictMode ? 'Only use the listed ingredients.' : 'You can suggest additional ingredients if needed.'}
+ Assume that the user has basic ingredients like salt, pepper, water dont include these in the response.
 Format the response as a JSON array with the following structure for each recipe:
 [
   {
