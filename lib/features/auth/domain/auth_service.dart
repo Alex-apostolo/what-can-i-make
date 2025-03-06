@@ -108,10 +108,15 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> signOut() async {
-    await _firebaseAuth.signOut();
-    _currentUser = null;
-    notifyListeners();
+  Future<Either<Failure, void>> signOut() async {
+    try {
+      await _firebaseAuth.signOut();
+      _currentUser = null;
+      notifyListeners();
+      return const Right(null);
+    } catch (e) {
+      return Left(AuthFailure('Failed to sign out: ${e.toString()}'));
+    }
   }
 
   Failure _mapFirebaseExceptionToFailure(firebase.FirebaseAuthException e) {
