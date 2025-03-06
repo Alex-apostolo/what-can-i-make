@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:logger/logger.dart';
 import 'package:what_can_i_make/core/database/database.dart';
 import 'package:what_can_i_make/core/utils/logger.dart';
 import 'firebase_options.dart';
@@ -25,15 +24,7 @@ import 'features/recipes/presentation/recipe_recommendations_screen.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  final AppLogger logger = AppLogger(
-    printer: PrettyPrinter(
-      methodCount: 2, // Stack trace depth
-      errorMethodCount: 8, // Stack trace depth for errors
-      lineLength: 100, // Log line width
-      colors: true, // Enable ANSI colors
-      printEmojis: true, // Use emojis in logs
-    ),
-  );
+  final AppLogger logger = AppLogger();
 
   // Catch Flutter errors
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -86,7 +77,6 @@ void main() async {
           errorHandler: errorHandler,
           storageRepository: storageRepository,
           inventoryService: inventoryService,
-          logger: logger,
         ),
       );
     });
@@ -126,14 +116,12 @@ class MyApp extends StatelessWidget {
   final ErrorHandler errorHandler;
   final StorageRepository storageRepository;
   final InventoryService inventoryService;
-  final AppLogger logger;
 
   const MyApp({
     super.key,
     required this.errorHandler,
     required this.storageRepository,
     required this.inventoryService,
-    required this.logger,
   });
 
   @override
@@ -144,7 +132,6 @@ class MyApp extends StatelessWidget {
         Provider<ErrorHandler>.value(value: errorHandler),
         Provider<StorageRepository>.value(value: storageRepository),
         Provider<InventoryService>.value(value: inventoryService),
-        Provider<AppLogger>.value(value: logger),
       ],
       child: MaterialApp(
         title: 'Kitchen Inventory',

@@ -5,7 +5,7 @@ import 'package:what_can_i_make/core/utils/logger.dart';
 
 class ErrorHandler {
   final GlobalKey<NavigatorState> navigatorKey;
-  final Logger _logger = Logger('ErrorHandler');
+  final AppLogger _logger = AppLogger();
 
   ErrorHandler({required this.navigatorKey});
 
@@ -13,7 +13,7 @@ class ErrorHandler {
   void showError(Failure failure) {
     final context = navigatorKey.currentContext;
 
-    _logger.e('Failure occurred', failure);
+    _logger.e('Failure occurred', error: failure);
 
     if (context == null) {
       _logger.w("Context is null, cannot show error snackbar");

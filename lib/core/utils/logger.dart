@@ -4,12 +4,18 @@ import 'package:logger/logger.dart';
 
 /// A custom logger that extends Logger and integrates Firebase Crashlytics.
 class AppLogger extends Logger {
-
-  AppLogger({
-    super.filter,
-    super.printer,
-    super.output,
-  });
+  AppLogger({super.filter, LogPrinter? printer, super.output, super.level})
+    : super(
+        printer:
+            printer ??
+            PrettyPrinter(
+              methodCount: 2, // Stack trace depth
+              errorMethodCount: 8, // Stack trace depth for errors
+              lineLength: 100, // Log line width
+              colors: true, // Enable ANSI colors
+              printEmojis: true, // Use emojis in logs
+            ),
+      );
 
   @override
   void log(
