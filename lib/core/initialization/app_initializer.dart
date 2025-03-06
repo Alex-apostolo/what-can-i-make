@@ -121,7 +121,8 @@ class AppInitializer {
     // Pass all uncaught errors from the framework to Crashlytics
     final crashlytics = FirebaseCrashlytics.instance;
 
-    // Force enable Crashlytics collection in debug mode for testing
+    // Enable Crashlytics collection even in debug mode for testing
+    // Note: In production, you might want to set this back to !kDebugMode
     await crashlytics.setCrashlyticsCollectionEnabled(!kDebugMode);
 
     // Add custom keys for additional context

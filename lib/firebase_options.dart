@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'kitchen-inventory-c7753.firebasestorage.app',
     iosBundleId: 'com.example.whatCanIMake',
   );
+
 }
