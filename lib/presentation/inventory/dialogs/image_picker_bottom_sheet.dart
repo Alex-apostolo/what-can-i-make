@@ -7,8 +7,12 @@ import '../../../domain/services/inventory_service.dart';
 
 class ImagePickerBottomSheet extends StatefulWidget {
   final Function onImagesProcessed;
+  final BuildContext parentContext;
 
-  const ImagePickerBottomSheet({required this.onImagesProcessed});
+  const ImagePickerBottomSheet({
+    required this.onImagesProcessed,
+    required this.parentContext,
+  });
 
   @override
   State<ImagePickerBottomSheet> createState() => _ImagePickerBottomSheetState();
@@ -21,8 +25,8 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
   @override
   void initState() {
     super.initState();
-    final inventoryService = context.read<InventoryService>();
-    _errorHandler = context.read<ErrorHandler>();
+    final inventoryService = widget.parentContext.read<InventoryService>();
+    _errorHandler = widget.parentContext.read<ErrorHandler>();
     _imageService = ImageService(inventoryService: inventoryService);
   }
 

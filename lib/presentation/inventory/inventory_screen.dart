@@ -26,11 +26,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      _inventoryService = context.read<InventoryService>();
-      _errorHandler = context.read<ErrorHandler>();
-      _loadInventory();
-    });
+    _inventoryService = context.read<InventoryService>();
+    _errorHandler = context.read<ErrorHandler>();
+    _loadInventory();
   }
 
   Future<void> _loadInventory() async {
@@ -58,8 +56,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context: context,
       isScrollControlled: true,
       builder:
-          (context) =>
-              ImagePickerBottomSheet(onImagesProcessed: _loadInventory),
+          (modalContext) => ImagePickerBottomSheet(
+            onImagesProcessed: _loadInventory,
+            parentContext: context,
+          ),
     );
   }
 
