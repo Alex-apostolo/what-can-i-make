@@ -67,8 +67,10 @@ class _RecipeRecommendationsScreenState
     );
 
     setState(() {
-      _recommendedRecipes = recipes;
       _isLoading = false;
+      if (recipes != null) {
+        _recommendedRecipes = recipes;
+      }
     });
   }
 
