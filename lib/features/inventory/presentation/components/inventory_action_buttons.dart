@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:what_can_i_make/core/utils/logger.dart';
 import 'package:what_can_i_make/features/recipes/presentation/recipe_recommendations_screen.dart';
 
 class InventoryActionButtons extends StatelessWidget {
@@ -40,37 +38,6 @@ class InventoryActionButtons extends StatelessWidget {
       ),
     ];
 
-    // Add test button in debug mode
-    if (kDebugMode) {
-      buttons.insert(
-        0,
-        FloatingActionButton(
-          heroTag: 'test_crashlytics',
-          onPressed: _testCrashlytics,
-          backgroundColor: colorScheme.errorContainer,
-          foregroundColor: colorScheme.onErrorContainer,
-          tooltip: 'Test Crashlytics',
-          child: const Icon(Icons.bug_report),
-        ),
-      );
-      buttons.insert(1, const SizedBox(width: 16));
-    }
-
     return Row(mainAxisSize: MainAxisSize.min, children: buttons);
-  }
-
-  void _testCrashlytics() {
-    final logger = AppLogger();
-    logger.i('Testing Crashlytics...');
-
-    // Option 1: Log a non-fatal error
-    try {
-      throw Exception('Test exception for Crashlytics');
-    } catch (e, stack) {
-      logger.e('Caught test exception', error: e, stackTrace: stack);
-    }
-
-    // Option 2: Force a crash (uncomment to test)
-    // FirebaseCrashlytics.instance.crash();
   }
 }
