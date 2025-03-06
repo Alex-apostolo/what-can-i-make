@@ -11,7 +11,7 @@ class AppLogger extends Logger {
             PrettyPrinter(
               methodCount: 2, // Stack trace depth
               errorMethodCount: 8, // Stack trace depth for errors
-              lineLength: 100, // Log line width
+              lineLength: 60, // Log line width
               colors: true, // Enable ANSI colors
               printEmojis: true, // Use emojis in logs
             ),
