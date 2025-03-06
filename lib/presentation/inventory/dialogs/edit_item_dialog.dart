@@ -38,7 +38,7 @@ class _EditItemDialogState extends State<EditItemDialog> {
       text: widget.ingredient.quantity.toString(),
     );
     _selectedUnit = widget.ingredient.unit;
-    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
+    _errorHandler = context.read<ErrorHandler>();
 
     // Listen for name changes to trigger recategorization
     _nameController.addListener(() {

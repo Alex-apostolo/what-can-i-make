@@ -20,7 +20,8 @@ class RecipeRecommendationsScreen extends StatefulWidget {
 
 class _RecipeRecommendationsScreenState
     extends State<RecipeRecommendationsScreen> {
-  final RecipeRecommendationService _recipeService = RecipeRecommendationService();
+  final RecipeRecommendationService _recipeService =
+      RecipeRecommendationService();
   late InventoryService _inventoryService;
   late ErrorHandler _errorHandler;
 
@@ -33,12 +34,12 @@ class _RecipeRecommendationsScreenState
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize services from providers
-    final storageRepository = Provider.of<StorageRepository>(context, listen: false);
-    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
+    final storageRepository = context.read<StorageRepository>();
+    _errorHandler = context.read<ErrorHandler>();
     _inventoryService = InventoryService(storageRepository: storageRepository);
-    
+
     _loadIngredients();
 
     // If ingredients were preselected, mark them as selected

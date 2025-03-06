@@ -29,7 +29,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
   void initState() {
     super.initState();
     _selectedUnit = MeasurementUnit.piece;
-    _errorHandler = Provider.of<ErrorHandler>(context, listen: false);
+    _errorHandler = context.read<ErrorHandler>();
   }
 
   @override
