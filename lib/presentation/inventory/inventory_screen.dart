@@ -32,6 +32,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<void> _loadInventory() async {
+    if (!mounted) return;
+
     _setLoading(true);
 
     final ingredients = _errorHandler.handleEither(
@@ -48,6 +50,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _setLoading(bool isLoading) {
+    if (!mounted) return;
     setState(() => _isLoading = isLoading);
   }
 
@@ -55,6 +58,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder:
           (modalContext) => ImagePickerBottomSheet(
             onImagesProcessed: _loadInventory,
@@ -63,33 +67,40 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
+  Future<void> _handleIngredientAction(Future<dynamic> action) async {
+    _setLoading(true);
+    _errorHandler.handleEither(await action);
+    if (mounted) _loadInventory();
+  }
+
   void _showAddDialog() {
-    DialogHelper.showAddDialog(context, (ingredient) async {
-      _errorHandler.handleEither(
-        await _inventoryService.addIngredients([ingredient]),
-      );
-      if (!mounted) return;
-      _loadInventory();
-    });
+    DialogHelper.showAddDialog(
+      context,
+      (ingredient) => _handleIngredientAction(
+        _inventoryService.addIngredients([ingredient]),
+      ),
+    );
   }
 
   void _showEditDialog(Ingredient item) {
-    DialogHelper.showEditDialog(context, item, (updatedIngredient) async {
-      _errorHandler.handleEither(
-        await _inventoryService.updateIngredient(updatedIngredient),
-      );
-      if (!mounted) return;
-      _loadInventory();
-    });
+    DialogHelper.showEditDialog(
+      context,
+      item,
+      (updatedIngredient) => _handleIngredientAction(
+        _inventoryService.updateIngredient(updatedIngredient),
+      ),
+    );
+  }
+
+  void _deleteIngredient(Ingredient ingredient) {
+    _handleIngredientAction(_inventoryService.deleteIngredient(ingredient));
   }
 
   void _showClearConfirmationDialog() {
-    DialogHelper.showClearConfirmationDialog(context, () async {
-      _setLoading(true);
-      _errorHandler.handleEither(await _inventoryService.clearIngredients());
-      if (!mounted) return;
-      _loadInventory();
-    });
+    DialogHelper.showClearConfirmationDialog(
+      context,
+      () => _handleIngredientAction(_inventoryService.clearIngredients()),
+    );
   }
 
   @override
@@ -117,15 +128,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         ? GroupedIngredientList(
                           ingredients: _inventory,
                           onEdit: _showEditDialog,
-                          onDelete: (ingredient) async {
-                            _errorHandler.handleEither(
-                              await _inventoryService.deleteIngredient(
-                                ingredient,
-                              ),
-                            );
-                            if (!mounted) return;
-                            _loadInventory();
-                          },
+                          onDelete: _deleteIngredient,
                         )
                         : EmptyState(
                           onAddPressed: _showAddDialog,
