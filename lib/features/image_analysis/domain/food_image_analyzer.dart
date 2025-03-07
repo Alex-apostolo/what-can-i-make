@@ -3,12 +3,12 @@ import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:what_can_i_make/core/models/measurement_unit.dart';
+import 'package:what_can_i_make/core/utils/id.dart';
 import 'package:what_can_i_make/features/categories/domain/category_service.dart';
 import 'package:what_can_i_make/core/models/ingredient.dart';
 import 'package:what_can_i_make/core/models/ingredient_category.dart';
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
-import 'package:what_can_i_make/core/utils/generate_unique_id.dart';
 import 'package:what_can_i_make/core/utils/clean_json.dart';
 
 /// Service to analyze food images and extract ingredients using OpenAI
@@ -266,8 +266,8 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
             }
 
             return Ingredient(
-              id: generateUniqueIdWithTimestamp(),
-              name: item['name'] ?? '',
+              id: generateTemporaryId(),
+              name: item['name'],
               quantity: quantity,
               unit: MeasurementUnit.fromString(item['unit'] ?? 'piece'),
               category: IngredientCategory.fromString(

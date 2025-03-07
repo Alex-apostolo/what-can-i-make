@@ -1,128 +1,103 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:what_can_i_make/core/utils/generate_unique_id.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/core/models/ingredient.dart';
+import 'package:what_can_i_make/core/database/database.dart';
+import 'package:what_can_i_make/core/utils/id.dart';
 
-/// Repository for handling persistent storage
+/// Repository for handling Firestore storage operations.
 class StorageRepository {
-  final Database database;
+  final AppDatabase database;
 
   StorageRepository({required this.database});
 
-  /// Retrieves all ingredients
+  CollectionReference get _ingredientsCollection =>
+      database.collection('ingredients');
+
+  /// Retrieves all ingredients, optionally sorted by timestamp.
   Future<Either<Failure, List<Ingredient>>> getIngredients({
     bool sortByTimestamp = true,
   }) async {
     try {
-      final db = database;
-
-      final ingredients = await db.query('ingredients');
-
-      final ingredientsJson =
-          ingredients
-              .map((ingredient) => Ingredient.fromJson(ingredient))
-              .toList();
+      final snapshot = await _ingredientsCollection.get();
+      final ingredients =
+          snapshot.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return Ingredient.fromJson({...data, 'id': doc.id});
+          }).toList();
 
       if (sortByTimestamp) {
-        ingredientsJson.sort(
+        ingredients.sort(
           (a, b) =>
-              getTimestampFromId(b.id).compareTo(getTimestampFromId(a.id)),
+              (getTimestampFromId(b.id)).compareTo(getTimestampFromId(a.id)),
         );
       }
 
-      return Right(ingredientsJson);
-    } on DatabaseException {
-      return Left(DatabaseQueryFailure('query'));
+      return Right(ingredients);
+    } on FirebaseException catch (e) {
+      return Left(DatabaseQueryFailure('Query failed: ${e.message}'));
     }
   }
 
-  /// Adds a new ingredient
-  Future<Either<Failure, Unit>> addIngredient(Ingredient ingredient) async {
-    try {
-      final db = database;
-      await db.insert('ingredients', ingredient.toJson());
-
-      return Right(unit);
-    } on DatabaseException {
-      return Left(DatabaseQueryFailure('insert'));
-    }
-  }
-
-  /// Adds multiple ingredients
+  /// Adds multiple ingredients using batch writes.
   Future<Either<Failure, Unit>> addIngredients(
     List<Ingredient> ingredients,
   ) async {
     try {
-      final db = database;
-      final batch = db.batch();
+      final batch = database.batch();
 
-      for (final item in ingredients) {
-        batch.insert('ingredients', item.toJson());
+      for (final ingredient in ingredients) {
+        final docRef = _ingredientsCollection.doc();
+
+        final ingredientData = ingredient.copyWith(id: docRef.id).toJson();
+        ingredientData['timestamp'] = FieldValue.serverTimestamp();
+
+        batch.set(docRef, ingredientData);
       }
 
-      await batch.commit(noResult: true);
+      await batch.commit();
       return Right(unit);
-    } on DatabaseException {
-      return Left(DatabaseQueryFailure('batch insert'));
+    } on FirebaseException catch (e) {
+      return Left(DatabaseQueryFailure('Batch insert failed: ${e.message}'));
     }
   }
 
-  /// Updates an existing ingredient
+  /// Updates an existing ingredient.
   Future<Either<Failure, Unit>> updateIngredient(Ingredient ingredient) async {
     try {
-      final db = database;
-      final count = await db.update(
-        'ingredients',
-        ingredient.toJson(),
-        where: 'id = ?',
-        whereArgs: [ingredient.id],
-      );
-
-      if (count == 0) {
-        return Left(ItemNotFoundFailure(ingredient.id));
-      }
-
+      await _ingredientsCollection
+          .doc(ingredient.id)
+          .update(ingredient.toJson()..remove('id'));
       return Right(unit);
-    } on DatabaseException {
-      return Left(DatabaseQueryFailure('update'));
+    } on FirebaseException catch (e) {
+      return Left(DatabaseQueryFailure('Update failed: ${e.message}'));
     }
   }
 
-  /// Removes an ingredient
+  /// Removes an ingredient.
   Future<Either<Failure, Unit>> removeIngredient(Ingredient ingredient) async {
     try {
-      final db = database;
-      final count = await db.delete(
-        'ingredients',
-        where: 'id = ?',
-        whereArgs: [ingredient.id],
-      );
-
-      if (count == 0) {
-        return Left(ItemNotFoundFailure(ingredient.id));
-      }
-
+      await _ingredientsCollection.doc(ingredient.id).delete();
       return Right(unit);
-    } on DatabaseException {
-      return Left(DatabaseQueryFailure('delete'));
+    } on FirebaseException catch (e) {
+      return Left(DatabaseQueryFailure('Delete failed: ${e.message}'));
     }
   }
 
-  /// Clears all ingredients
+  /// Clears all ingredients using batch delete.
   Future<Either<Failure, Unit>> clearIngredients() async {
     try {
-      final db = database;
-      await db.delete('ingredients');
-      return Right(unit);
-    } on DatabaseException {
-      return Left(DatabaseQueryFailure('clear'));
-    }
-  }
+      final snapshot = await _ingredientsCollection.get();
+      final batch = database.batch();
 
-  /// Closes the database connection
-  Future<void> close() async {
-    final db = database;
-    await db.close();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      await batch.commit();
+      return Right(unit);
+    } on FirebaseException catch (e) {
+      return Left(DatabaseQueryFailure('Clear failed: ${e.message}'));
+    }
   }
 }

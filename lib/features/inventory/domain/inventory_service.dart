@@ -66,9 +66,4 @@ class InventoryService {
       return _storageRepository.addIngredients(combinedIngredients);
     });
   }
-
-  /// Disposes resources
-  void dispose() {
-    _storageRepository.close();
-  }
 }

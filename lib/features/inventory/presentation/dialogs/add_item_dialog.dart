@@ -4,7 +4,7 @@ import 'package:what_can_i_make/core/models/ingredient.dart';
 import 'package:what_can_i_make/core/models/measurement_unit.dart';
 import 'package:what_can_i_make/core/models/ingredient_category.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
-import 'package:what_can_i_make/core/utils/generate_unique_id.dart';
+import 'package:what_can_i_make/core/utils/id.dart';
 import 'package:what_can_i_make/features/categories/domain/category_service.dart';
 
 class AddItemDialog extends StatefulWidget {
@@ -59,7 +59,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
       }, (category) => category);
 
       final newItem = Ingredient(
-        id: generateUniqueIdWithTimestamp(),
+        id: generateTemporaryId(),
         name: name,
         quantity: quantity,
         unit: MeasurementUnit.fromString(_selectedUnit.label),

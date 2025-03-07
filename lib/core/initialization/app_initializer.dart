@@ -12,7 +12,6 @@ import 'package:what_can_i_make/core/utils/logger.dart';
 import 'package:what_can_i_make/data/repositories/storage_repository.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'package:what_can_i_make/firebase_options.dart';
-import 'package:sqflite/sqflite.dart' as sqflite;
 
 import 'app_services.dart';
 
@@ -93,13 +92,13 @@ class AppInitializer {
     logger.d('Crashlytics initialized');
   }
 
-  Future<sqflite.Database> _initializeDatabase() async {
-    final database = await Database.initializeDatabase('kitchen_inventory.db');
+  Future<AppDatabase> _initializeDatabase() async {
+    final database = await Database.initializeDatabase();
     logger.d('Database initialized');
     return database;
   }
 
-  Future<AppServices> _setupServices(sqflite.Database database) async {
+  Future<AppServices> _setupServices(AppDatabase database) async {
     final errorHandler = ErrorHandler(navigatorKey: navigatorKey);
     final storageRepository = StorageRepository(database: database);
     final inventoryService = InventoryService(
