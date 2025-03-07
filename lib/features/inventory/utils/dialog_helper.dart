@@ -20,7 +20,7 @@ class DialogHelper {
   /// Shows dialog to add a new item
   static Future<void> showAddDialog(
     BuildContext context,
-    Function(Ingredient) onAdd,
+    Function(IngredientInput) onAdd,
   ) {
     return showDialog(
       context: context,

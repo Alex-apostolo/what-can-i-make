@@ -79,8 +79,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showAddDialog() {
     DialogHelper.showAddDialog(
       context,
-      (Ingredient ingredient) => _handleIngredientAction(
-        _inventoryService.addIngredients([ingredient]),
+      (IngredientInput ingredientInput) => _handleIngredientAction(
+        _inventoryService.addIngredients([ingredientInput]),
       ),
     );
   }

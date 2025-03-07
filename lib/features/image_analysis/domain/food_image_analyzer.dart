@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:what_can_i_make/core/models/measurement_unit.dart';
-import 'package:what_can_i_make/core/utils/id.dart';
 import 'package:what_can_i_make/features/categories/domain/category_service.dart';
 import 'package:what_can_i_make/core/models/ingredient.dart';
 import 'package:what_can_i_make/core/models/ingredient_category.dart';
@@ -86,22 +85,26 @@ Ensure the JSON is properly formatted and contains only relevant data from the i
     {
       "name": "Whole Milk",
       "quantity": 2,
-      "unit": "L"
+      "unit": "L",
+      "category": "Dairy"
     },
     {
       "name": "Cherry Tomatoes",
       "quantity": 200,
-      "unit": "g"
+      "unit": "g",
+      "category": "Produce"
     },
     {
       "name": "Cheddar Cheese",
       "quantity": 500,
-      "unit": "g"
+      "unit": "g",
+      "category": "Dairy"
     },
     {
       "name": "Strawberry Yogurt",
       "quantity": 4,
-      "unit": "cups"
+      "unit": "cups",
+      "category": "Dairy"
     }
   ]
 }
@@ -121,7 +124,9 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
   ///
   /// [imagePaths] is a list of paths to image files to analyze
   /// Returns Either a Failure or a list of [Ingredient] objects
-  Future<Either<Failure, List<Ingredient>>> run(List<String> imagePaths) async {
+  Future<Either<Failure, List<IngredientInput>>> run(
+    List<String> imagePaths,
+  ) async {
     if (imagePaths.isEmpty) {
       return const Right([]);
     }
@@ -153,10 +158,10 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
   }
 
   /// Combines results from multiple batches, handling errors
-  Either<Failure, List<Ingredient>> _combineResults(
-    List<Either<Failure, List<Ingredient>>> results,
+  Either<Failure, List<IngredientInput>> _combineResults(
+    List<Either<Failure, List<IngredientInput>>> results,
   ) {
-    final allIngredients = <Ingredient>[];
+    final allIngredients = <IngredientInput>[];
     final failures = <Failure>[];
 
     for (final result in results) {
@@ -176,7 +181,7 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
   }
 
   /// Processes a batch of images
-  Future<Either<Failure, List<Ingredient>>> _processBatch(
+  Future<Either<Failure, List<IngredientInput>>> _processBatch(
     List<String> batchPaths,
   ) async {
     try {
@@ -243,7 +248,7 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
   }
 
   /// Parses the OpenAI response and converts it to a list of Ingredients
-  Either<Failure, List<Ingredient>> _parseResponse(String content) {
+  Either<Failure, List<IngredientInput>> _parseResponse(String content) {
     try {
       // Parse the JSON string into a Map
       final Map<String, dynamic> jsonData = jsonDecode(content);
@@ -252,7 +257,7 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
       final List<dynamic> ingredients = jsonData['ingredients'] ?? [];
 
       final parsedIngredients =
-          ingredients.map<Ingredient>((item) {
+          ingredients.map<IngredientInput>((item) {
             // Handle quantity - ensure it's an integer
             int quantity = 0;
             if (item['quantity'] != null) {
@@ -265,8 +270,7 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
               }
             }
 
-            return Ingredient(
-              id: generateTemporaryId(),
+            return IngredientInput(
               name: item['name'],
               quantity: quantity,
               unit: MeasurementUnit.fromString(item['unit'] ?? 'piece'),

@@ -127,6 +127,7 @@ class IngredientCombinerService {
       category: base.category,
       quantity: totalQuantity.round(),
       unit: MeasurementUnit.fromString(_normalizeUnitName(largestUnit)),
+      createdAt: base.createdAt,
     );
   }
 

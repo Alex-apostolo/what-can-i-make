@@ -1,9 +1,10 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart' as firebase;
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/core/models/ingredient.dart';
 import 'package:what_can_i_make/core/database/database.dart';
-import 'package:what_can_i_make/core/utils/id.dart';
 
 /// Repository for handling Firestore storage operations.
 class StorageRepository {
@@ -19,17 +20,29 @@ class StorageRepository {
     bool sortByTimestamp = true,
   }) async {
     try {
-      final snapshot = await _ingredientsCollection.get();
+      final snapshot =
+          await _ingredientsCollection
+              .orderBy('createdAt', descending: true)
+              .get();
       final ingredients =
           snapshot.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
-            return Ingredient.fromJson({...data, 'id': doc.id});
+            return Ingredient.fromJson({
+              ...data,
+              'id': doc.id,
+              'createdAt': data['createdAt'].toDate(),
+            });
           }).toList();
+
+      ingredients.forEach((element) {
+        print('element: ${element.toJson()}');
+      });
 
       if (sortByTimestamp) {
         ingredients.sort(
-          (a, b) =>
-              (getTimestampFromId(b.id)).compareTo(getTimestampFromId(a.id)),
+          (a, b) => (b.createdAt.millisecondsSinceEpoch).compareTo(
+            a.createdAt.millisecondsSinceEpoch,
+          ),
         );
       }
 
@@ -50,8 +63,12 @@ class StorageRepository {
 
       for (final ingredient in ingredients) {
         final docRef = _ingredientsCollection.doc();
+        final createdAt = firebase.FieldValue.serverTimestamp();
 
-        final ingredientData = ingredient.copyWith(id: docRef.id).toJson();
+        final ingredientData = ingredient.toJson();
+        ingredientData['createdAt'] = createdAt;
+        ingredientData['id'] = docRef.id;
+
         batch.set(docRef, ingredientData);
       }
 

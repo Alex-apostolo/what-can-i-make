@@ -28,12 +28,26 @@ class InventoryService {
 
   /// Adds multiple items
   Future<Either<Failure, void>> addIngredients(
-    List<Ingredient> newIngredients,
+    List<IngredientInput> newIngredients,
   ) async {
     final result = await _storageRepository.getIngredients();
+    final processedIngredients =
+        newIngredients
+            .map(
+              (ingredient) => Ingredient(
+                id: '',
+                name: ingredient.name,
+                quantity: ingredient.quantity,
+                unit: ingredient.unit,
+                category: ingredient.category,
+                createdAt: DateTime.now(),
+              ),
+            )
+            .toList();
     return result.fold(
       (failure) => Left(failure),
-      (ingredients) => _addTidiedIngredients(ingredients + newIngredients),
+      (ingredients) =>
+          _addTidiedIngredients(ingredients + processedIngredients),
     );
   }
 

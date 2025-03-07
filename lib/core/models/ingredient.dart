@@ -7,6 +7,7 @@ class Ingredient {
   final int quantity;
   final MeasurementUnit unit;
   final IngredientCategory category;
+  final DateTime createdAt;
 
   const Ingredient({
     required this.id,
@@ -14,6 +15,7 @@ class Ingredient {
     required this.quantity,
     required this.unit,
     required this.category,
+    required this.createdAt,
   });
 
   /// Get the appropriate unit label based on quantity
@@ -33,6 +35,7 @@ class Ingredient {
     int? quantity,
     MeasurementUnit? unit,
     IngredientCategory? category,
+    DateTime? createdAt,
   }) {
     return Ingredient(
       id: id ?? this.id,
@@ -40,6 +43,7 @@ class Ingredient {
       quantity: quantity ?? this.quantity,
       unit: unit ?? this.unit,
       category: category ?? this.category,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -51,6 +55,7 @@ class Ingredient {
       'quantity': quantity,
       'unit': unit.label,
       'category': category.displayName,
+      'createdAt': createdAt,
     };
   }
 
@@ -62,6 +67,31 @@ class Ingredient {
       quantity: json['quantity'],
       unit: MeasurementUnit.fromString(json['unit'] ?? 'piece'),
       category: IngredientCategory.fromString(json['category'] ?? 'Other'),
+      createdAt: json['createdAt'],
     );
+  }
+}
+
+class IngredientInput {
+  final String name;
+  final int quantity;
+  final MeasurementUnit unit;
+  final IngredientCategory category;
+
+  IngredientInput({
+    required this.name,
+    required this.quantity,
+    required this.unit,
+    required this.category,
+  });
+
+  /// Convert this IngredientInput to a Map for storage
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'quantity': quantity,
+      'unit': unit.label,
+      'category': category.displayName,
+    };
   }
 }
