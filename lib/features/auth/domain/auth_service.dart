@@ -39,7 +39,7 @@ class AuthService extends ChangeNotifier {
       }
       return Left(AuthFailure('Sign in failed'));
     } on firebase.FirebaseAuthException catch (e) {
-      return Left(_mapFirebaseExceptionToFailure(e));
+      return Left(_getFriendlyErrorMessage(e));
     } catch (e) {
       return Left(
         AuthFailure('Unexpected error during sign in: ${e.toString()}'),
@@ -64,7 +64,7 @@ class AuthService extends ChangeNotifier {
       }
       return Left(AuthFailure('Account creation failed'));
     } on firebase.FirebaseAuthException catch (e) {
-      return Left(_mapFirebaseExceptionToFailure(e));
+      return Left(_getFriendlyErrorMessage(e));
     } catch (e) {
       return Left(
         AuthFailure(
@@ -100,7 +100,7 @@ class AuthService extends ChangeNotifier {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
       return const Right(null);
     } on firebase.FirebaseAuthException catch (e) {
-      return Left(_mapFirebaseExceptionToFailure(e));
+      return Left(_getFriendlyErrorMessage(e));
     } catch (e) {
       return Left(
         AuthFailure('Failed to send password reset email: ${e.toString()}'),
@@ -119,7 +119,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Failure _mapFirebaseExceptionToFailure(firebase.FirebaseAuthException e) {
+  Failure _getFriendlyErrorMessage(firebase.FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
         return AuthFailure('No user found with this email');

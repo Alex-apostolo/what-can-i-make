@@ -26,15 +26,9 @@ class ParsingFailure extends Failure {
   const ParsingFailure() : super('Parsing error');
 }
 
-/// Failure when database connection fails
-class DatabaseConnectionFailure extends Failure {
-  const DatabaseConnectionFailure() : super('Failed to connect to database');
-}
-
 /// Failure when a database query fails
 class DatabaseQueryFailure extends Failure {
-  const DatabaseQueryFailure(String operation)
-    : super('Database $operation failed');
+  const DatabaseQueryFailure(super.message);
 }
 
 /// Failure when an item is not found in the database

@@ -32,11 +32,14 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _signOut() async {
     setState(() => _isLoading = true);
 
-    final result = await _authService.signOut();
+    final authResult = await _authService.signOut();
 
-    result.fold((failure) => _errorHandler.showError(failure), (r) {
+    final auth = _errorHandler.handleFatalEither(authResult);
+
+    if (auth != null) {
+      setState(() => _isLoading = false);
       Navigator.of(context).pushReplacementNamed('/');
-    });
+    }
 
     if (mounted) {
       setState(() => _isLoading = false);

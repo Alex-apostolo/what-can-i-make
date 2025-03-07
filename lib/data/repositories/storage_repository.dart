@@ -35,7 +35,7 @@ class StorageRepository {
 
       return Right(ingredients);
     } on FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure('Query failed: ${e.message}'));
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
     }
   }
 
@@ -50,15 +50,13 @@ class StorageRepository {
         final docRef = _ingredientsCollection.doc();
 
         final ingredientData = ingredient.copyWith(id: docRef.id).toJson();
-        ingredientData['timestamp'] = FieldValue.serverTimestamp();
-
         batch.set(docRef, ingredientData);
       }
 
       await batch.commit();
       return Right(unit);
     } on FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure('Batch insert failed: ${e.message}'));
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
     }
   }
 
@@ -70,7 +68,7 @@ class StorageRepository {
           .update(ingredient.toJson()..remove('id'));
       return Right(unit);
     } on FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure('Update failed: ${e.message}'));
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
     }
   }
 
@@ -80,7 +78,7 @@ class StorageRepository {
       await _ingredientsCollection.doc(ingredient.id).delete();
       return Right(unit);
     } on FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure('Delete failed: ${e.message}'));
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
     }
   }
 
@@ -97,7 +95,26 @@ class StorageRepository {
       await batch.commit();
       return Right(unit);
     } on FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure('Clear failed: ${e.message}'));
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
+    }
+  }
+
+  String _getFriendlyErrorMessage(FirebaseException e) {
+    switch (e.code) {
+      case 'permission-denied':
+        return 'You do not have permission to access this resource.';
+      case 'unauthenticated':
+        return 'You must be logged in to access this resource.';
+      case 'unauthorized':
+        return 'You are not authorized to access this resource.';
+      case 'invalid-argument':
+        return 'The request contains invalid arguments.';
+      case 'resource-exhausted':
+        return 'The resource has been exhausted.';
+      case 'unavailable':
+        return 'The service is currently unavailable.';
+      default:
+        return 'An unexpected error occurred. Please try again.';
     }
   }
 }

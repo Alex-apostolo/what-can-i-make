@@ -34,17 +34,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<void> _loadInventory() async {
-    if (!mounted) return;
-
     _setLoading(true);
+    final ingredientsResult = await _inventoryService.getIngredients();
+    _setLoading(false);
 
-    final ingredients = _errorHandler.handleEither(
-      await _inventoryService.getIngredients(),
+    final ingredients = _errorHandler.handleFatalEither(
+      ingredientsResult,
+      onRetry: _loadInventory,
     );
 
-    if (!mounted) return;
-    setInventory(ingredients);
-    _setLoading(false);
+    if (ingredients != null) {
+      setInventory(ingredients);
+    }
   }
 
   void setInventory(List<Ingredient> ingredients) {
