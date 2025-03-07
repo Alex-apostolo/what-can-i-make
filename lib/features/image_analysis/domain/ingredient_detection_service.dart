@@ -9,7 +9,7 @@ import 'package:what_can_i_make/features/categories/domain/category_service.dart
 
 /// Service to analyze food images and extract ingredients using OpenAI
 class IngredientDetectionService extends OpenAIServiceBase {
-  static const int _maxImagesPerRequest = 3;
+  static const int _maxImagesPerRequest = 1;
 
   static const String _unitPrompt = '''
 Return one of these exact units (singular or plural form):

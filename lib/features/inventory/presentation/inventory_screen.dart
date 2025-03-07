@@ -33,14 +33,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
     _loadInventory();
   }
 
-  Future<void> _loadInventory() async {
-    _setLoading(true);
+  Future<void> _loadInventory({bool showLoading = true}) async {
+    if (showLoading) _setLoading(true);
     final ingredientsResult = await _inventoryService.getIngredients();
-    _setLoading(false);
+    if (showLoading) _setLoading(false);
 
     final ingredients = _errorHandler.handleFatalEither(
       ingredientsResult,
-      onRetry: _loadInventory,
+      onRetry: () => _loadInventory(),
     );
 
     if (ingredients != null && mounted) {
@@ -71,9 +71,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<void> _handleIngredientAction(Future<dynamic> action) async {
-    _setLoading(true);
     _errorHandler.handleEither(await action);
-    if (mounted) _loadInventory();
+    if (mounted) _loadInventory(showLoading: false);
   }
 
   void _showAddDialog() {
