@@ -64,7 +64,9 @@ class ImageService {
 
   /// Processes images through OpenAI and saves results
   Future<Either<Failure, void>> _processImages(List<String> imagePaths) async {
-    final ingredientsResult = await _foodImageAnalyzer.run(imagePaths);
+    final ingredientsResult = await _foodImageAnalyzer.analyzeImages(
+      imagePaths,
+    );
 
     return ingredientsResult.fold(
       (failure) => Left(failure),
