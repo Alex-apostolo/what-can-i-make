@@ -14,7 +14,7 @@ abstract class Failure {
   /// Log this failure to the application logger
   void log() {
     final logger = AppLogger();
-    logger.e(message, error: error);
+    logger.e(error?.toString() ?? message, error: error);
   }
 }
 
