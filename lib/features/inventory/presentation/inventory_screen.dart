@@ -43,7 +43,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       onRetry: _loadInventory,
     );
 
-    if (ingredients != null) {
+    if (ingredients != null && mounted) {
       setInventory(ingredients);
     }
   }
