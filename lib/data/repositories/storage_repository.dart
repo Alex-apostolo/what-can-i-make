@@ -35,9 +35,9 @@ class StorageRepository {
 
       return Right(ingredients);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
-    } catch (e) {
-      return Left(GenericFailure());
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -58,9 +58,9 @@ class StorageRepository {
       await batch.commit();
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
-    } catch (e) {
-      return Left(GenericFailure());
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -72,9 +72,9 @@ class StorageRepository {
           .update(ingredient.toJson()..remove('id'));
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
-    } catch (e) {
-      return Left(GenericFailure());
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -84,9 +84,9 @@ class StorageRepository {
       await _ingredientsCollection.doc(ingredient.id).delete();
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
-    } catch (e) {
-      return Left(GenericFailure());
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -103,9 +103,9 @@ class StorageRepository {
       await batch.commit();
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
-    } catch (e) {
-      return Left(GenericFailure());
+      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 

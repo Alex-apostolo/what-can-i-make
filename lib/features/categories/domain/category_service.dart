@@ -67,7 +67,7 @@ Return only the category name, nothing else.
 
       final content = response.choices.first.message.content;
       if (content == null) {
-        return Left(OpenAIEmptyResponseFailure());
+        return Left(OpenAIEmptyResponseFailure(Exception(response)));
       }
 
       // Clean up the response (remove quotes, trim whitespace)
@@ -77,10 +77,10 @@ Return only the category name, nothing else.
       // Convert to IngredientCategory
       final category = IngredientCategory.fromString(cleanedContent);
       return Right(category);
-    } on OpenAIClientException {
-      return Left(OpenAIRequestFailure());
-    } catch (e) {
-      return Left(GenericFailure());
+    } on OpenAIClientException catch (e) {
+      return Left(OpenAIRequestFailure(e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 

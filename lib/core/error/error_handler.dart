@@ -13,7 +13,8 @@ class ErrorHandler {
   void showErrorSnackbar(Failure failure) {
     final context = navigatorKey.currentContext;
 
-    _logger.e('Failure occurred', error: failure);
+    // Log the failure with detailed error information
+    failure.log();
 
     if (context == null) {
       _logger.w("Context is null, cannot show error snackbar");
@@ -30,10 +31,11 @@ class ErrorHandler {
   }
 
   /// Shows a fatal error dialog that blocks the UI until user takes action
-  void showFatalErrorDialog(String message, {VoidCallback? onRetry}) {
+  void showFatalErrorDialog(Failure failure, {VoidCallback? onRetry}) {
     final context = navigatorKey.currentContext;
 
-    _logger.e('Fatal error occurred', error: message);
+    // Log the failure with detailed error information
+    failure.log();
 
     if (context == null) {
       _logger.w("Context is null, cannot show fatal error dialog");
@@ -48,7 +50,10 @@ class ErrorHandler {
           backgroundColor: Colors.red[100],
           title: const Text('Fatal Error', style: TextStyle(color: Colors.red)),
           content: SingleChildScrollView(
-            child: Text(message, style: const TextStyle(color: Colors.red)),
+            child: Text(
+              failure.message,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
           actions: <Widget>[
             if (onRetry != null)
@@ -72,7 +77,7 @@ class ErrorHandler {
 
   /// Handles a fatal failure that prevents the app from continuing normal operation
   void handleFatalFailure(Failure failure, {VoidCallback? onRetry}) {
-    showFatalErrorDialog(failure.message, onRetry: onRetry);
+    showFatalErrorDialog(failure, onRetry: onRetry);
   }
 
   /// Handles an Either result, executing success callback on Right

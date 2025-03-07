@@ -48,8 +48,8 @@ class IngredientCombinerService {
       }
 
       return Right(combinedIngredients);
-    } catch (e) {
-      return Left(ParsingFailure());
+    } on Exception catch (e) {
+      return Left(ParsingFailure(e));
     }
   }
 

@@ -70,12 +70,14 @@ Format the response as a JSON array with the following structure for each recipe
       // Extract the content from the response
       final content = response.choices.first.message.content;
       if (content == null) {
-        return Left(OpenAIEmptyResponseFailure());
+        return Left(OpenAIEmptyResponseFailure(Exception(response)));
       }
 
       return _parseResponse(content);
-    } on OpenAIClientException {
-      return Left(OpenAIRequestFailure());
+    } on OpenAIClientException catch (e) {
+      return Left(OpenAIRequestFailure(e));
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -87,15 +89,15 @@ Format the response as a JSON array with the following structure for each recipe
       ).firstMatch(content);
 
       if (jsonMatch == null) {
-        return Left(ParsingFailure());
+        return Left(ParsingFailure(Exception(content)));
       }
 
       final jsonStr = jsonMatch.group(0);
       final List<dynamic> recipesJson = jsonDecode(jsonStr!);
 
       return Right(recipesJson.map((json) => Recipe.fromJson(json)).toList());
-    } on FormatException {
-      return Left(ParsingFailure());
+    } on FormatException catch (e) {
+      return Left(ParsingFailure(e));
     }
   }
 }

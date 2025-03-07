@@ -185,15 +185,15 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
 
       if (response.choices.isEmpty ||
           response.choices.first.message.content == null) {
-        return Left(OpenAIEmptyResponseFailure());
+        return Left(OpenAIEmptyResponseFailure(Exception(response)));
       }
 
       final content = response.choices.first.message.content!;
       final cleanedContent = cleanJsonContent(content);
 
       return _parseResponse(cleanedContent);
-    } on OpenAIClientException {
-      return Left(OpenAIRequestFailure());
+    } on OpenAIClientException catch (e) {
+      return Left(OpenAIRequestFailure(e));
     }
   }
 
@@ -277,8 +277,8 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
           }).toList();
 
       return Right(parsedIngredients);
-    } on FormatException {
-      return Left(ParsingFailure());
+    } on FormatException catch (e) {
+      return Left(ParsingFailure(e));
     }
   }
 

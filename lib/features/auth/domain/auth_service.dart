@@ -37,11 +37,11 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
         return Right(_currentUser!);
       }
-      return Left(AuthFailure('Sign in failed'));
+      return Left(AuthFailure('Sign in failed', null));
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
-    } catch (e) {
-      return Left(GenericFailure());
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -60,11 +60,11 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
         return Right(_currentUser!);
       }
-      return Left(AuthFailure('Account creation failed'));
+      return Left(AuthFailure('Account creation failed', null));
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
-    } catch (e) {
-      return Left(GenericFailure());
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -75,7 +75,7 @@ class AuthService extends ChangeNotifier {
     try {
       final user = _firebaseAuth.currentUser;
       if (user == null) {
-        return Left(AuthFailure('No user is signed in'));
+        return Left(AuthFailure('No user is signed in', null));
       }
 
       await user.updateDisplayName(displayName);
@@ -84,8 +84,8 @@ class AuthService extends ChangeNotifier {
       _currentUser = User.fromFirebaseUser(user);
       notifyListeners();
       return const Right(null);
-    } catch (e) {
-      return Left(AuthFailure('Failed to update profile: ${e.toString()}'));
+    } on Exception catch (e) {
+      return Left(AuthFailure('Failed to update profile', e));
     }
   }
 
@@ -95,8 +95,8 @@ class AuthService extends ChangeNotifier {
       return const Right(null);
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
-    } catch (e) {
-      return Left(GenericFailure());
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
@@ -106,35 +106,35 @@ class AuthService extends ChangeNotifier {
       _currentUser = null;
       notifyListeners();
       return const Right(null);
-    } catch (e) {
-      return Left(GenericFailure());
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
     }
   }
 
   Failure _getFriendlyErrorMessage(firebase.FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return AuthFailure('No user found with this email');
+        return AuthFailure('No user found with this email', e);
       case 'wrong-password':
-        return AuthFailure('Incorrect password');
+        return AuthFailure('Incorrect password', e);
       case 'email-already-in-use':
-        return AuthFailure('Email is already in use');
+        return AuthFailure('Email is already in use', e);
       case 'weak-password':
-        return AuthFailure('Password is too weak');
+        return AuthFailure('Password is too weak', e);
       case 'invalid-email':
-        return AuthFailure('Invalid email format');
+        return AuthFailure('Invalid email format', e);
       case 'user-disabled':
-        return AuthFailure('This account has been disabled');
+        return AuthFailure('This account has been disabled', e);
       case 'operation-not-allowed':
-        return AuthFailure('Operation not allowed');
+        return AuthFailure('Operation not allowed', e);
       case 'too-many-requests':
-        return AuthFailure('Too many attempts. Try again later');
+        return AuthFailure('Too many attempts. Try again later', e);
       default:
-        return AuthFailure('Authentication error');
+        return AuthFailure('Authentication error', e);
     }
   }
 }
 
 class AuthFailure extends Failure {
-  AuthFailure(super.message);
+  AuthFailure(super.message, super.error);
 }

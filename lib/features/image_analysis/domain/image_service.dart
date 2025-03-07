@@ -23,8 +23,8 @@ class ImageService {
     try {
       final image = await _picker.pickImage(source: ImageSource.camera);
       return Right(image); // May be null if user cancels
-    } on Exception {
-      return Left(ImagePickFailure('Failed to capture image'));
+    } on Exception catch (e) {
+      return Left(ImagePickFailure('Failed to capture image', e));
     }
   }
 
@@ -46,8 +46,8 @@ class ImageService {
           totalSelected: images.length,
         ),
       );
-    } on Exception {
-      return Left(ImagePickFailure('Failed to pick images'));
+    } on Exception catch (e) {
+      return Left(ImagePickFailure('Failed to pick images', e));
     }
   }
 
@@ -100,5 +100,5 @@ class ImagePickFailure extends Failure {
   @override
   final String message;
 
-  const ImagePickFailure(this.message) : super(message);
+  const ImagePickFailure(this.message, Exception error) : super(message, error);
 }

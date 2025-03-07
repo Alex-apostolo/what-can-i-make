@@ -42,17 +42,23 @@ class _RecipeRecommendationsScreenState
 
   Future<void> _loadIngredients() async {
     setState(() => _isLoading = true);
-    final ingredients = _errorHandler.handleEither(
-      await _inventoryService.getIngredients(),
-    );
-    ingredients.forEach((e) {
-      _selectedIngredientIds.add(e.id.toString());
-    });
+    final ingredientsResult = await _inventoryService.getIngredients();
+    setState(() => _isLoading = false);
 
-    setState(() {
-      _availableIngredients = ingredients;
-      _isLoading = false;
-    });
+    final ingredients = _errorHandler.handleFatalEither(
+      ingredientsResult,
+      onRetry: _loadIngredients,
+    );
+
+    if (ingredients != null) {
+      ingredients.forEach((e) {
+        _selectedIngredientIds.add(e.id.toString());
+      });
+
+      setState(() {
+        _availableIngredients = ingredients;
+      });
+    }
   }
 
   Future<void> _generateRecommendations() async {
