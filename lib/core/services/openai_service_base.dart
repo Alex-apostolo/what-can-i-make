@@ -15,12 +15,16 @@ abstract class OpenAIServiceBase {
 
   Future<CreateChatCompletionResponse> sendRequest(
     List<ChatCompletionMessage> messages,
-    String model,
-  ) {
+    String model, {
+    double? temperature,
+    int? maxTokens,
+  }) {
     return _client.createChatCompletion(
       request: CreateChatCompletionRequest(
         model: ChatCompletionModel.modelId(model),
         messages: messages,
+        temperature: temperature,
+        maxTokens: maxTokens,
       ),
     );
   }

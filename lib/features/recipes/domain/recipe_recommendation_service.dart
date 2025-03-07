@@ -1,22 +1,12 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/core/models/ingredient.dart';
 import 'package:what_can_i_make/core/models/recipe.dart';
+import 'package:what_can_i_make/core/services/openai_service_base.dart';
 
-class RecipeRecommendationService {
-  late final OpenAIClient _client;
-
-  RecipeRecommendationService() {
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null) {
-      throw Exception('OpenAI API key not found in .env file');
-    }
-    _client = OpenAIClient(apiKey: apiKey);
-  }
-
+class RecipeRecommendationService extends OpenAIServiceBase {
   String _generateRecipesPrompt({
     required String availableIngredients,
     required bool strictMode,
@@ -45,26 +35,24 @@ Format the response as a JSON array with the following structure for each recipe
 
     try {
       // Make the API request
-      final response = await _client.createChatCompletion(
-        request: CreateChatCompletionRequest(
-          model: ChatCompletionModel.modelId('gpt-4o'),
-          messages: [
-            ChatCompletionMessage.system(
-              content:
-                  'You are a helpful cooking assistant that generates recipe recommendations based on available ingredients.',
-            ),
-            ChatCompletionMessage.user(
-              content: ChatCompletionUserMessageContent.string(
-                _generateRecipesPrompt(
-                  availableIngredients: ingredientNames,
-                  strictMode: strictMode,
-                ),
+      final response = await sendRequest(
+        [
+          ChatCompletionMessage.system(
+            content:
+                'You are a helpful cooking assistant that generates recipe recommendations based on available ingredients.',
+          ),
+          ChatCompletionMessage.user(
+            content: ChatCompletionUserMessageContent.string(
+              _generateRecipesPrompt(
+                availableIngredients: ingredientNames,
+                strictMode: strictMode,
               ),
             ),
-          ],
-          temperature: 0.7,
-          maxTokens: 1000,
-        ),
+          ),
+        ],
+        'gpt-4o',
+        temperature: 0.7,
+        maxTokens: 1000,
       );
 
       // Extract the content from the response
