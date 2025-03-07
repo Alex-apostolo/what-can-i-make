@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:what_can_i_make/core/services/token_usage_service.dart';
+import 'package:what_can_i_make/core/services/request_limit_service.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'package:what_can_i_make/features/recipes/domain/recipe_recommendation_service.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
@@ -19,7 +19,6 @@ class RecipeRecommendationsScreen extends StatefulWidget {
 
 class _RecipeRecommendationsScreenState
     extends State<RecipeRecommendationsScreen> {
-
   late RecipeRecommendationService _recipeService;
   late InventoryService _inventoryService;
   late ErrorHandler _errorHandler;
@@ -37,9 +36,9 @@ class _RecipeRecommendationsScreenState
     // Initialize services from providers
     _errorHandler = context.read<ErrorHandler>();
     _inventoryService = context.read<InventoryService>();
-    final tokenUsageService = context.read<TokenUsageService>();
+    final requestLimitService = context.read<RequestLimitService>();
     _recipeService = RecipeRecommendationService(
-      tokenUsageService: tokenUsageService,
+      requestLimitService: requestLimitService,
     );
     _loadIngredients();
   }

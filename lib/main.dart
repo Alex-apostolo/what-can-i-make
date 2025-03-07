@@ -14,7 +14,7 @@ import 'features/inventory/presentation/inventory_screen.dart';
 import 'features/recipes/presentation/recipe_recommendations_screen.dart';
 import 'package:what_can_i_make/core/initialization/app_initializer.dart';
 import 'features/auth/presentation/account_screen.dart';
-import 'package:what_can_i_make/core/services/token_usage_service.dart';
+import 'package:what_can_i_make/core/services/request_limit_service.dart';
 
 // Global navigator key for app-wide navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -38,7 +38,7 @@ void main() async {
         errorHandler: services.errorHandler,
         storageRepository: services.storageRepository,
         inventoryService: services.inventoryService,
-        tokenUsageService: services.tokenUsageService,
+        requestLimitService: services.requestLimitService,
       ),
     );
   } catch (e, stackTrace) {
@@ -55,14 +55,14 @@ class MyApp extends StatelessWidget {
   final ErrorHandler errorHandler;
   final StorageRepository storageRepository;
   final InventoryService inventoryService;
-  final TokenUsageService tokenUsageService;
+  final RequestLimitService requestLimitService;
 
   const MyApp({
     super.key,
     required this.errorHandler,
     required this.storageRepository,
     required this.inventoryService,
-    required this.tokenUsageService,
+    required this.requestLimitService,
   });
 
   @override
@@ -87,7 +87,9 @@ class MyApp extends StatelessWidget {
       Provider<ErrorHandler>.value(value: errorHandler),
       Provider<StorageRepository>.value(value: storageRepository),
       Provider<InventoryService>.value(value: inventoryService),
-      ChangeNotifierProvider<TokenUsageService>.value(value: tokenUsageService),
+      ChangeNotifierProvider<RequestLimitService>.value(
+        value: requestLimitService,
+      ),
     ];
   }
 

@@ -1,13 +1,13 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:openai_dart/openai_dart.dart';
-import 'package:what_can_i_make/core/services/token_usage_service.dart';
+import 'package:what_can_i_make/core/services/request_limit_service.dart';
 
 /// Base class for OpenAI services
 abstract class OpenAIServiceBase {
   late final OpenAIClient _client;
-  final TokenUsageService? tokenUsageService;
+  final RequestLimitService? requestLimitService;
 
-  OpenAIServiceBase({this.tokenUsageService}) {
+  OpenAIServiceBase({this.requestLimitService}) {
     final apiKey = dotenv.env['OPENAI_API_KEY'];
     if (apiKey == null) {
       throw Exception('OpenAI API key not found in .env file');
@@ -15,12 +15,12 @@ abstract class OpenAIServiceBase {
     _client = OpenAIClient(apiKey: apiKey);
   }
 
-  Future<bool> checkTokenLimit() async {
-    if (tokenUsageService == null) {
-      return true; // No token service, so no limit
+  Future<bool> checkRequestLimit() async {
+    if (requestLimitService == null) {
+      return true; // No request limit service, so no limit
     }
 
-    if (tokenUsageService!.hasExceededLimit) {
+    if (requestLimitService!.hasExceededLimit) {
       return false; // Limit exceeded
     }
 
@@ -33,10 +33,10 @@ abstract class OpenAIServiceBase {
     double? temperature,
     int? maxTokens,
   }) async {
-    // Check if we've exceeded the token limit
-    final canProceed = await checkTokenLimit();
+    // Check if we've exceeded the request limit
+    final canProceed = await checkRequestLimit();
     if (!canProceed) {
-      throw Exception('Token usage limit exceeded. Please upgrade your plan.');
+      throw Exception('API request limit exceeded. Please upgrade your plan.');
     }
 
     final response = await _client.createChatCompletion(
@@ -48,11 +48,9 @@ abstract class OpenAIServiceBase {
       ),
     );
 
-    // Track token usage if service is available
-    if (tokenUsageService != null) {
-      // Use the actual token count from the API response
-      final totalTokens = tokenUsageService!.tokensUsed;
-      await tokenUsageService!.recordTokenUsage(totalTokens + 1);
+    // Record the request if service is available
+    if (requestLimitService != null) {
+      await requestLimitService!.recordRequest();
     }
 
     return response;

@@ -3,7 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'ingredient_detection_service.dart';
-import 'package:what_can_i_make/core/services/token_usage_service.dart';
+import 'package:what_can_i_make/core/services/request_limit_service.dart';
 
 /// Service to handle image selection and processing
 class ImageService {
@@ -18,10 +18,10 @@ class ImageService {
   /// Constructor that initializes the service
   ImageService({
     required InventoryService inventoryService,
-    TokenUsageService? tokenUsageService,
+    RequestLimitService? requestLimitService,
   }) : _inventoryService = inventoryService,
        _ingredientDetectionService = IngredientDetectionService(
-         tokenUsageService: tokenUsageService,
+         requestLimitService: requestLimitService,
        );
 
   /// Picks a single image from camera

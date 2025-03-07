@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/features/auth/domain/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:what_can_i_make/core/services/token_usage_service.dart';
+import 'package:what_can_i_make/core/services/request_limit_service.dart';
 
 class AccountScreen extends StatefulWidget {
   static const routeName = '/account';
@@ -50,8 +50,8 @@ class _AccountScreenState extends State<AccountScreen> {
     final user = _authService.currentUser;
 
     // Listen to token usage changes
-    final tokensUsed = context.watch<TokenUsageService>().tokensUsed;
-    final tokensLimit = context.watch<TokenUsageService>().tokensLimit;
+    final requestsUsed = context.watch<RequestLimitService>().requestsUsed;
+    final requestsLimit = context.watch<RequestLimitService>().requestsLimit;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Account')),
@@ -120,14 +120,14 @@ class _AccountScreenState extends State<AccountScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Token Usage',
+                      'API Usage',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 16),
                     LinearProgressIndicator(
-                      value: tokensUsed / tokensLimit,
+                      value: requestsUsed / requestsLimit,
                       backgroundColor: colorScheme.primaryContainer.withOpacity(
                         0.3,
                       ),
@@ -142,11 +142,11 @@ class _AccountScreenState extends State<AccountScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '$tokensUsed tokens used',
+                          '$requestsUsed requests used',
                           style: theme.textTheme.bodyMedium,
                         ),
                         Text(
-                          '$tokensLimit tokens limit',
+                          '$requestsLimit requests limit',
                           style: theme.textTheme.bodyMedium,
                         ),
                       ],
