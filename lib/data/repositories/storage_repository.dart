@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart' as firebase;
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
@@ -34,18 +32,6 @@ class StorageRepository {
             });
           }).toList();
 
-      ingredients.forEach((element) {
-        print('element: ${element.toJson()}');
-      });
-
-      if (sortByTimestamp) {
-        ingredients.sort(
-          (a, b) => (b.createdAt.millisecondsSinceEpoch).compareTo(
-            a.createdAt.millisecondsSinceEpoch,
-          ),
-        );
-      }
-
       return Right(ingredients);
     } on firebase.FirebaseException catch (e) {
       return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
@@ -56,17 +42,16 @@ class StorageRepository {
 
   /// Adds multiple ingredients using batch writes.
   Future<Either<Failure, Unit>> addIngredients(
-    List<Ingredient> ingredients,
+    List<IngredientInput> ingredientInputs,
   ) async {
     try {
       final batch = database.batch();
 
-      for (final ingredient in ingredients) {
+      for (final ingredientInput in ingredientInputs) {
         final docRef = _ingredientsCollection.doc();
-        final createdAt = firebase.FieldValue.serverTimestamp();
 
-        final ingredientData = ingredient.toJson();
-        ingredientData['createdAt'] = createdAt;
+        final ingredientData = ingredientInput.toJson();
+        ingredientData['createdAt'] = firebase.FieldValue.serverTimestamp();
         ingredientData['id'] = docRef.id;
 
         batch.set(docRef, ingredientData);
@@ -86,7 +71,11 @@ class StorageRepository {
     try {
       await _ingredientsCollection
           .doc(ingredient.id)
-          .update(ingredient.toJson()..remove('id'));
+          .update(
+            ingredient.toJson()
+              ..remove('id')
+              ..remove('createdAt'),
+          );
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
       return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));

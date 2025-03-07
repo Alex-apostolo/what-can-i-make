@@ -30,25 +30,9 @@ class InventoryService {
   Future<Either<Failure, void>> addIngredients(
     List<IngredientInput> newIngredients,
   ) async {
-    final result = await _storageRepository.getIngredients();
-    final processedIngredients =
-        newIngredients
-            .map(
-              (ingredient) => Ingredient(
-                id: '',
-                name: ingredient.name,
-                quantity: ingredient.quantity,
-                unit: ingredient.unit,
-                category: ingredient.category,
-                createdAt: DateTime.now(),
-              ),
-            )
-            .toList();
-    return result.fold(
-      (failure) => Left(failure),
-      (ingredients) =>
-          _addTidiedIngredients(ingredients + processedIngredients),
-    );
+    final result = await _storageRepository.addIngredients(newIngredients);
+
+    return result.fold((failure) => Left(failure), (_) => _tidyIngredients());
   }
 
   /// Deletes an item
@@ -62,22 +46,26 @@ class InventoryService {
   }
 
   // Tidies the inventory, removing duplicates and combining quantities
-  Future<Either<Failure, void>> _addTidiedIngredients(ingredients) async {
+  Future<Either<Failure, void>> _tidyIngredients() async {
+    final result = await _storageRepository.getIngredients();
+
+    if (result.isLeft()) {
+      return Left(GenericFailure(Exception(result)));
+    }
+
     final combinedResult = await _ingredientCombinerService.combineIngredients(
-      ingredients,
+      result.getOrElse(() => []),
     );
 
-    return combinedResult.fold((failure) => Left(failure), (
-      combinedIngredients,
-    ) async {
-      // Clear existing ingredients
-      final clearResult = await _storageRepository.clearIngredients();
+    if (combinedResult.isLeft()) {
+      return Left(GenericFailure(Exception(combinedResult)));
+    }
 
-      if (clearResult.isLeft()) {
-        return clearResult;
-      }
+    final tidyIngredients = combinedResult.getOrElse(() => []);
 
-      return _storageRepository.addIngredients(combinedIngredients);
-    });
+    return _storageRepository.addIngredients(
+      tidyIngredients.map((ingredient) => ingredient.toJson()).toList()
+          as List<IngredientInput>,
+    );
   }
 }
