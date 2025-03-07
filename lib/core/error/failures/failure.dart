@@ -5,6 +5,11 @@ abstract class Failure {
   const Failure(this.message);
 }
 
+class GenericFailure extends Failure {
+  const GenericFailure()
+    : super('An unexpected error occurred. Please try again.');
+}
+
 /// Failure related to OpenAI API requests
 class OpenAIRequestFailure extends Failure {
   const OpenAIRequestFailure() : super('OpenAI request failed');

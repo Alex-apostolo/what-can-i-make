@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' as firebase;
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/core/models/ingredient.dart';
@@ -11,7 +11,7 @@ class StorageRepository {
 
   StorageRepository({required this.database});
 
-  CollectionReference get _ingredientsCollection =>
+  firebase.CollectionReference get _ingredientsCollection =>
       database.collection('ingredients');
 
   /// Retrieves all ingredients, optionally sorted by timestamp.
@@ -34,8 +34,10 @@ class StorageRepository {
       }
 
       return Right(ingredients);
-    } on FirebaseException catch (e) {
+    } on firebase.FirebaseException catch (e) {
       return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
+    } catch (e) {
+      return Left(GenericFailure());
     }
   }
 
@@ -55,8 +57,10 @@ class StorageRepository {
 
       await batch.commit();
       return Right(unit);
-    } on FirebaseException catch (e) {
+    } on firebase.FirebaseException catch (e) {
       return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
+    } catch (e) {
+      return Left(GenericFailure());
     }
   }
 
@@ -67,8 +71,10 @@ class StorageRepository {
           .doc(ingredient.id)
           .update(ingredient.toJson()..remove('id'));
       return Right(unit);
-    } on FirebaseException catch (e) {
+    } on firebase.FirebaseException catch (e) {
       return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
+    } catch (e) {
+      return Left(GenericFailure());
     }
   }
 
@@ -77,8 +83,10 @@ class StorageRepository {
     try {
       await _ingredientsCollection.doc(ingredient.id).delete();
       return Right(unit);
-    } on FirebaseException catch (e) {
+    } on firebase.FirebaseException catch (e) {
       return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
+    } catch (e) {
+      return Left(GenericFailure());
     }
   }
 
@@ -94,12 +102,14 @@ class StorageRepository {
 
       await batch.commit();
       return Right(unit);
-    } on FirebaseException catch (e) {
+    } on firebase.FirebaseException catch (e) {
       return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e)));
+    } catch (e) {
+      return Left(GenericFailure());
     }
   }
 
-  String _getFriendlyErrorMessage(FirebaseException e) {
+  String _getFriendlyErrorMessage(firebase.FirebaseException e) {
     switch (e.code) {
       case 'permission-denied':
         return 'You do not have permission to access this resource.';

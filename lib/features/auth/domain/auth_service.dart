@@ -41,9 +41,7 @@ class AuthService extends ChangeNotifier {
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
     } catch (e) {
-      return Left(
-        AuthFailure('Unexpected error during sign in: ${e.toString()}'),
-      );
+      return Left(GenericFailure());
     }
   }
 
@@ -66,11 +64,7 @@ class AuthService extends ChangeNotifier {
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
     } catch (e) {
-      return Left(
-        AuthFailure(
-          'Unexpected error during account creation: ${e.toString()}',
-        ),
-      );
+      return Left(GenericFailure());
     }
   }
 
@@ -102,9 +96,7 @@ class AuthService extends ChangeNotifier {
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
     } catch (e) {
-      return Left(
-        AuthFailure('Failed to send password reset email: ${e.toString()}'),
-      );
+      return Left(GenericFailure());
     }
   }
 
@@ -115,7 +107,7 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
       return const Right(null);
     } catch (e) {
-      return Left(AuthFailure('Failed to sign out: ${e.toString()}'));
+      return Left(GenericFailure());
     }
   }
 
@@ -138,7 +130,7 @@ class AuthService extends ChangeNotifier {
       case 'too-many-requests':
         return AuthFailure('Too many attempts. Try again later');
       default:
-        return AuthFailure('Authentication error: ${e.message}');
+        return AuthFailure('Authentication error');
     }
   }
 }

@@ -79,6 +79,8 @@ Return only the category name, nothing else.
       return Right(category);
     } on OpenAIClientException {
       return Left(OpenAIRequestFailure());
+    } catch (e) {
+      return Left(GenericFailure());
     }
   }
 

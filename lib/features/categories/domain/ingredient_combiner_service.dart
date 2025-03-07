@@ -49,7 +49,6 @@ class IngredientCombinerService {
 
       return Right(combinedIngredients);
     } catch (e) {
-      print('Error combining ingredients: $e');
       return Left(ParsingFailure());
     }
   }
