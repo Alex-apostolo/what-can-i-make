@@ -7,6 +7,8 @@ import 'package:what_can_i_make/core/models/recipe.dart';
 import 'package:what_can_i_make/core/services/openai_service_base.dart';
 
 class RecipeRecommendationService extends OpenAIServiceBase {
+  RecipeRecommendationService({required super.tokenUsageService});
+
   String _generateRecipesPrompt({
     required String availableIngredients,
     required bool strictMode,

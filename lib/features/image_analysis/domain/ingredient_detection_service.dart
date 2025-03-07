@@ -9,6 +9,8 @@ import 'package:what_can_i_make/features/categories/domain/category_service.dart
 
 /// Service to analyze food images and extract ingredients using OpenAI
 class IngredientDetectionService extends OpenAIServiceBase {
+  IngredientDetectionService({required super.tokenUsageService});
+
   static const int _maxImagesPerRequest = 1;
 
   static const String _unitPrompt = '''

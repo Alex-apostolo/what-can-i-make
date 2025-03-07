@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'ingredient_detection_service.dart';
+import 'package:what_can_i_make/core/services/token_usage_service.dart';
 
 /// Service to handle image selection and processing
 class ImageService {
@@ -11,13 +12,17 @@ class ImageService {
 
   // Services
   final ImagePicker _picker = ImagePicker();
-  final IngredientDetectionService _foodImageAnalyzer =
-      IngredientDetectionService();
+  final IngredientDetectionService _ingredientDetectionService;
   final InventoryService _inventoryService;
 
   /// Constructor that initializes the service
-  ImageService({required InventoryService inventoryService})
-    : _inventoryService = inventoryService;
+  ImageService({
+    required InventoryService inventoryService,
+    TokenUsageService? tokenUsageService,
+  }) : _inventoryService = inventoryService,
+       _ingredientDetectionService = IngredientDetectionService(
+         tokenUsageService: tokenUsageService,
+       );
 
   /// Picks a single image from camera
   Future<Either<Failure, XFile?>> pickCameraImage() async {
@@ -65,7 +70,7 @@ class ImageService {
 
   /// Processes images through OpenAI and saves results
   Future<Either<Failure, void>> _processImages(List<String> imagePaths) async {
-    final ingredientsResult = await _foodImageAnalyzer.analyzeImages(
+    final ingredientsResult = await _ingredientDetectionService.analyzeImages(
       imagePaths,
     );
 
@@ -78,7 +83,7 @@ class ImageService {
 
   /// Disposes resources
   void dispose() {
-    _foodImageAnalyzer.dispose();
+    _ingredientDetectionService.dispose();
   }
 }
 

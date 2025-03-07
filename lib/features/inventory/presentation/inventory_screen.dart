@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/core/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
+import 'package:what_can_i_make/features/inventory/presentation/components/app_bar.dart';
+import 'package:what_can_i_make/features/inventory/presentation/components/empty_state.dart';
+import 'package:what_can_i_make/features/inventory/presentation/components/grouped_ingredient_list.dart';
+import 'package:what_can_i_make/features/inventory/presentation/components/inventory_action_buttons.dart';
+import 'package:what_can_i_make/features/inventory/presentation/dialogs/image_picker_bottom_sheet.dart';
 import 'package:what_can_i_make/features/inventory/utils/dialog_helper.dart';
-import 'components/app_bar.dart';
-import 'components/empty_state.dart';
-import 'components/grouped_ingredient_list.dart';
-import 'components/inventory_action_buttons.dart';
-import 'dialogs/image_picker_bottom_sheet.dart';
-import '../domain/inventory_service.dart';
 
 class InventoryScreen extends StatefulWidget {
   static const routeName = '/inventory';
@@ -20,7 +20,7 @@ class InventoryScreen extends StatefulWidget {
 }
 
 class _InventoryScreenState extends State<InventoryScreen> {
-  List<Ingredient> _inventory = [];
+  List<Ingredient> _ingredients = [];
   bool _isLoading = true;
   late final InventoryService _inventoryService;
   late final ErrorHandler _errorHandler;
@@ -49,7 +49,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void setInventory(List<Ingredient> ingredients) {
-    setState(() => _inventory = ingredients);
+    setState(() => _ingredients = ingredients);
   }
 
   void _setLoading(bool isLoading) {
@@ -107,7 +107,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasItems = _inventory.isNotEmpty;
+    final hasItems = _ingredients.isNotEmpty;
 
     return Scaffold(
       appBar: HomeAppBar(
@@ -128,7 +128,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 child:
                     hasItems
                         ? GroupedIngredientList(
-                          ingredients: _inventory,
+                          ingredients: _ingredients,
                           onEdit: _showEditDialog,
                           onDelete: _deleteIngredient,
                         )

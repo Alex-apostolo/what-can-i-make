@@ -10,6 +10,8 @@ import 'package:what_can_i_make/core/utils/logger.dart';
 import 'package:what_can_i_make/data/repositories/storage_repository.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'package:what_can_i_make/firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:what_can_i_make/core/services/token_usage_service.dart';
 
 import 'app_services.dart';
 
@@ -99,6 +101,13 @@ class AppInitializer {
   Future<AppServices> _setupServices(AppDatabase database) async {
     final errorHandler = ErrorHandler(navigatorKey: navigatorKey);
     final storageRepository = StorageRepository(database: database);
+
+    // Create token usage service
+    final tokenUsageService = TokenUsageService(
+      firestore: database,
+      auth: FirebaseAuth.instance,
+    );
+
     final inventoryService = InventoryService(
       storageRepository: storageRepository,
     );
@@ -107,6 +116,7 @@ class AppInitializer {
       errorHandler: errorHandler,
       storageRepository: storageRepository,
       inventoryService: inventoryService,
+      tokenUsageService: tokenUsageService,
     );
   }
 

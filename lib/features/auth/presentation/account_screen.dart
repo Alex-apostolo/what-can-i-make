@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/features/auth/domain/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:what_can_i_make/core/services/token_usage_service.dart';
 
 class AccountScreen extends StatefulWidget {
   static const routeName = '/account';
@@ -17,10 +18,6 @@ class _AccountScreenState extends State<AccountScreen> {
   late final AuthService _authService;
   late final ErrorHandler _errorHandler;
   bool _isLoading = false;
-
-  // Placeholder for token usage - in a real app, this would come from a service
-  final int _tokensUsed = 0;
-  final int _tokensLimit = 100;
 
   @override
   void initState() {
@@ -51,6 +48,10 @@ class _AccountScreenState extends State<AccountScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final user = _authService.currentUser;
+
+    // Listen to token usage changes
+    final tokensUsed = context.watch<TokenUsageService>().tokensUsed;
+    final tokensLimit = context.watch<TokenUsageService>().tokensLimit;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Account')),
@@ -126,7 +127,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                     const SizedBox(height: 16),
                     LinearProgressIndicator(
-                      value: _tokensUsed / _tokensLimit,
+                      value: tokensUsed / tokensLimit,
                       backgroundColor: colorScheme.primaryContainer.withOpacity(
                         0.3,
                       ),
@@ -141,11 +142,11 @@ class _AccountScreenState extends State<AccountScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '$_tokensUsed tokens used',
+                          '$tokensUsed tokens used',
                           style: theme.textTheme.bodyMedium,
                         ),
                         Text(
-                          '$_tokensLimit tokens limit',
+                          '$tokensLimit tokens limit',
                           style: theme.textTheme.bodyMedium,
                         ),
                       ],

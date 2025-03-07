@@ -4,9 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/features/image_analysis/domain/image_service.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
+import 'package:what_can_i_make/core/services/token_usage_service.dart';
 
 class ImagePickerBottomSheet extends StatefulWidget {
-  final Function onImagesProcessed;
+  final VoidCallback onImagesProcessed;
   final BuildContext parentContext;
 
   const ImagePickerBottomSheet({
@@ -20,15 +21,24 @@ class ImagePickerBottomSheet extends StatefulWidget {
 }
 
 class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
-  late final ImageService _imageService;
-  late final ErrorHandler _errorHandler;
+  late ErrorHandler _errorHandler;
+  late ImageService _imageService;
 
   @override
   void initState() {
     super.initState();
-    final inventoryService = widget.parentContext.read<InventoryService>();
-    _errorHandler = widget.parentContext.read<ErrorHandler>();
-    _imageService = ImageService(inventoryService: inventoryService);
+    _errorHandler = Provider.of<ErrorHandler>(widget.parentContext);
+    final inventoryService = Provider.of<InventoryService>(
+      widget.parentContext,
+    );
+    final tokenUsageService = Provider.of<TokenUsageService>(
+      widget.parentContext,
+    );
+
+    _imageService = ImageService(
+      inventoryService: inventoryService,
+      tokenUsageService: tokenUsageService,
+    );
   }
 
   @override
