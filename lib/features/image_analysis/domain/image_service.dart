@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
-import 'food_image_analyzer.dart';
+import 'ingredient_detection_service.dart';
 
 /// Service to handle image selection and processing
 class ImageService {
@@ -11,7 +11,8 @@ class ImageService {
 
   // Services
   final ImagePicker _picker = ImagePicker();
-  final FoodImageAnalyzer _foodImageAnalyzer = FoodImageAnalyzer();
+  final IngredientDetectionService _foodImageAnalyzer =
+      IngredientDetectionService();
   final InventoryService _inventoryService;
 
   /// Constructor that initializes the service

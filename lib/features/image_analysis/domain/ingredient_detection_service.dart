@@ -8,7 +8,7 @@ import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/categories/domain/category_service.dart';
 
 /// Service to analyze food images and extract ingredients using OpenAI
-class FoodImageAnalyzer extends OpenAIServiceBase {
+class IngredientDetectionService extends OpenAIServiceBase {
   static const int _maxImagesPerRequest = 3;
 
   static const String _unitPrompt = '''
