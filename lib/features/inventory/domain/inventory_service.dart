@@ -64,8 +64,9 @@ class InventoryService {
     final tidyIngredients = combinedResult.getOrElse(() => []);
 
     return _storageRepository.addIngredients(
-      tidyIngredients.map((ingredient) => ingredient.toJson()).toList()
-          as List<IngredientInput>,
+      tidyIngredients
+          .map((ingredient) => IngredientInput.fromJson(ingredient as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

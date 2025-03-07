@@ -94,4 +94,14 @@ class IngredientInput {
       'category': category.displayName,
     };
   }
+
+  /// Create an IngredientInput from a Map (from storage)
+  factory IngredientInput.fromJson(Map<String, dynamic> json) {
+    return IngredientInput(
+      name: json['name'],
+      quantity: json['quantity'],
+      unit: MeasurementUnit.fromString(json['unit'] ?? 'piece'),
+      category: IngredientCategory.fromString(json['category'] ?? 'Other'),
+    );
+  }
 }
