@@ -1,54 +1,54 @@
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/features/categories/domain/ingredient_combiner_service.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
-import 'package:what_can_i_make/data/repositories/storage_repository.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/data/inventory_repository.dart';
 
 /// Service to manage kitchen inventory operations
 class InventoryService {
-  late final StorageRepository _storageRepository;
+  late final InventoryRepository _inventoryRepository;
   late final IngredientCombinerService _ingredientCombinerService;
 
-  InventoryService({required StorageRepository storageRepository}) {
+  InventoryService({required InventoryRepository inventoryRepository}) {
     _ingredientCombinerService = IngredientCombinerService();
-    _storageRepository = storageRepository;
+    _inventoryRepository = inventoryRepository;
   }
 
   /// Loads inventory from storage
-  Future<Either<Failure, List<Ingredient>>> getIngredients() async {
-    return _storageRepository.getIngredients();
+  Future<Either<Failure, List<Ingredient>>> getInventory() async {
+    return _inventoryRepository.getInventory();
   }
 
   /// Updates an existing item
   Future<Either<Failure, void>> updateIngredient(
     Ingredient updatedIngredient,
   ) async {
-    return _storageRepository.updateIngredient(updatedIngredient);
+    return _inventoryRepository.updateIngredient(updatedIngredient);
   }
 
   /// Adds multiple items
   Future<Either<Failure, void>> addIngredients(
     List<IngredientInput> newIngredients,
   ) async {
-    final result = await _storageRepository.addIngredients(newIngredients);
+    final result = await _inventoryRepository.addIngredients(newIngredients);
 
-    return result.fold((failure) => Left(failure), (_) => _tidyIngredients());
+    return result.fold((failure) => Left(failure), (_) => _tidyInventory());
   }
 
   /// Deletes an item
   Future<Either<Failure, void>> deleteIngredient(Ingredient ingredient) async {
-    return _storageRepository.removeIngredient(ingredient);
+    return _inventoryRepository.removeIngredient(ingredient);
   }
 
   /// Clears all inventory items
-  Future<Either<Failure, void>> clearIngredients() async {
-    return _storageRepository.clearIngredients();
+  Future<Either<Failure, void>> clearInventory() async {
+    return _inventoryRepository.clearInventory();
   }
 
   // Tidies the inventory, removing duplicates and combining quantities
-  Future<Either<Failure, void>> _tidyIngredients() async {
+  Future<Either<Failure, void>> _tidyInventory() async {
     // Get all ingredients
-    final result = await _storageRepository.getIngredients();
+    final result = await _inventoryRepository.getInventory();
     if (result.isLeft()) {
       return Left(GenericFailure(Exception(result)));
     }
@@ -63,13 +63,13 @@ class InventoryService {
 
     // Clear existing ingredients and add the combined ones
     final tidyIngredients = combinedResult.getOrElse(() => []);
-    final clearResult = await _storageRepository.clearIngredients();
+    final clearResult = await _inventoryRepository.clearInventory();
     if (clearResult.isLeft()) {
       return Left(GenericFailure(Exception(clearResult)));
     }
 
     // Convert Ingredient objects to IngredientInput objects
-    return _storageRepository.addIngredients(
+    return _inventoryRepository.addIngredients(
       tidyIngredients
           .map(
             (ingredient) => IngredientInput(

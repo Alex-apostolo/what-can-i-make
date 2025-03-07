@@ -1,6 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:openai_dart/openai_dart.dart';
-import 'package:what_can_i_make/core/services/request_limit_service.dart';
+import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
 
 /// Base class for OpenAI services
 abstract class OpenAIServiceBase {

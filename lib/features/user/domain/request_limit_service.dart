@@ -1,13 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
+import 'package:what_can_i_make/features/user/data/user_repository.dart';
 import 'package:dartz/dartz.dart';
 
 /// Service to track and manage API request limits
 class RequestLimitService extends ChangeNotifier {
-  final FirebaseFirestore _firestore;
+  final UserRepository _userRepository;
   final FirebaseAuth _auth;
   final Logger _logger = Logger();
 
@@ -16,9 +16,9 @@ class RequestLimitService extends ChangeNotifier {
   final int _requestsLimit = 50; // Default limit
 
   RequestLimitService({
-    required FirebaseFirestore firestore,
+    required UserRepository userRepository,
     required FirebaseAuth auth,
-  }) : _firestore = firestore,
+  }) : _userRepository = userRepository,
        _auth = auth {
     // Load request usage when service is created
     _loadRequestUsage();
@@ -34,7 +34,7 @@ class RequestLimitService extends ChangeNotifier {
   bool get hasExceededLimit => _requestsUsed >= _requestsLimit;
 
   /// Record a new API request
-  Future<Either<Failure, void>> recordRequest() async {
+  Future<Either<Failure, Unit>> recordRequest() async {
     try {
       // Update in-memory counter first
       _requestsUsed += 1;
@@ -44,32 +44,18 @@ class RequestLimitService extends ChangeNotifier {
 
       // If no user is logged in, only keep the in-memory counter
       if (userId == null) {
-        return const Right(null);
+        return const Right(unit);
       }
 
-      // Update Firestore document
-      final userRef = _firestore.collection('users').doc(userId);
-
-      await _firestore.runTransaction((transaction) async {
-        final userDoc = await transaction.get(userRef);
-
-        if (userDoc.exists) {
-          transaction.update(userRef, {'requestsUsed': _requestsUsed});
-        } else {
-          transaction.set(userRef, {'requestsUsed': _requestsUsed});
-        }
-      });
-
-      return const Right(null);
-    } on FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure('Failed to update request usage', e));
+      // Update user's request usage in repository
+      return _userRepository.updateRequestUsage(userId, _requestsUsed);
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
   }
 
   /// Reset request usage for the current user
-  Future<Either<Failure, void>> resetRequestUsage() async {
+  Future<Either<Failure, Unit>> resetRequestUsage() async {
     try {
       _requestsUsed = 0;
       notifyListeners();
@@ -77,31 +63,31 @@ class RequestLimitService extends ChangeNotifier {
       final userId = _auth.currentUser?.uid;
 
       if (userId != null) {
-        await _firestore.collection('users').doc(userId).update({
-          'requestsUsed': 0,
-        });
+        return _userRepository.resetRequestUsage(userId);
       }
 
-      return const Right(null);
-    } on FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure('Failed to reset request usage', e));
+      return const Right(unit);
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
   }
 
-  /// Load request usage from Firestore
+  /// Load request usage from repository
   Future<void> _loadRequestUsage() async {
     try {
       final userId = _auth.currentUser?.uid;
 
       if (userId != null) {
-        final userDoc = await _firestore.collection('users').doc(userId).get();
+        final result = await _userRepository.getRequestUsage(userId);
 
-        if (userDoc.exists) {
-          _requestsUsed = userDoc.data()?['requestsUsed'] as int? ?? 0;
-          notifyListeners();
-        }
+        result.fold(
+          (failure) =>
+              _logger.e('Error loading request usage', error: failure.error),
+          (usage) {
+            _requestsUsed = usage;
+            notifyListeners();
+          },
+        );
       }
     } catch (e) {
       // Just log the error, don't throw

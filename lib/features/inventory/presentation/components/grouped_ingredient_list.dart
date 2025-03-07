@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'ingredient_card.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
-import 'package:what_can_i_make/core/models/ingredient_category.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient_category.dart';
 
 class GroupedIngredientList extends StatelessWidget {
   final List<Ingredient> ingredients;

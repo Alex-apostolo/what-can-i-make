@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:what_can_i_make/core/services/request_limit_service.dart';
+import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'package:what_can_i_make/features/recipes/domain/recipe_recommendation_service.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
-import 'package:what_can_i_make/core/models/recipe.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
+import 'package:what_can_i_make/features/recipes/models/recipe.dart';
 
 class RecipeRecommendationsScreen extends StatefulWidget {
   static const routeName = '/recipe_recommendations';
@@ -45,21 +45,21 @@ class _RecipeRecommendationsScreenState
 
   Future<void> _loadIngredients() async {
     setState(() => _isLoading = true);
-    final ingredientsResult = await _inventoryService.getIngredients();
+    final inventoryResult = await _inventoryService.getInventory();
     setState(() => _isLoading = false);
 
-    final ingredients = _errorHandler.handleFatalEither(
-      ingredientsResult,
+    final inventory = _errorHandler.handleFatalEither(
+      inventoryResult,
       onRetry: _loadIngredients,
     );
 
-    if (ingredients != null) {
-      ingredients.forEach((e) {
+    if (inventory != null) {
+      inventory.forEach((e) {
         _selectedIngredientIds.add(e.id.toString());
       });
 
       setState(() {
-        _availableIngredients = ingredients;
+        _availableIngredients = inventory;
       });
     }
   }

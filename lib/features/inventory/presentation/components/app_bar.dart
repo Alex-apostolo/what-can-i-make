@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:what_can_i_make/features/auth/presentation/account_screen.dart';
+import 'package:what_can_i_make/features/user/presentation/account_screen.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool hasItems;

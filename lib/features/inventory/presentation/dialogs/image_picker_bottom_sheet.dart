@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/features/image_analysis/domain/image_service.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
-import 'package:what_can_i_make/core/services/request_limit_service.dart';
+import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
 
 class ImagePickerBottomSheet extends StatefulWidget {
   final VoidCallback onImagesProcessed;

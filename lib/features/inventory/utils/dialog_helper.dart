@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
 import 'package:what_can_i_make/features/inventory/presentation/dialogs/add_item_dialog.dart';
 import 'package:what_can_i_make/features/inventory/presentation/dialogs/edit_item_dialog.dart';
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
-import 'package:what_can_i_make/core/models/measurement_unit.dart';
-import 'package:what_can_i_make/core/models/ingredient_category.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/models/measurement_unit.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient_category.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/features/categories/domain/category_service.dart';
 

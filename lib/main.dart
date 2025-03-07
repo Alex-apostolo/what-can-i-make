@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:what_can_i_make/core/utils/logger.dart';
 import 'theme/app_theme.dart';
-import 'data/repositories/storage_repository.dart';
 import 'core/error/error_handler.dart';
 import 'package:provider/provider.dart';
 import 'features/auth/domain/auth_service.dart';
@@ -13,8 +12,8 @@ import 'features/inventory/domain/inventory_service.dart';
 import 'features/inventory/presentation/inventory_screen.dart';
 import 'features/recipes/presentation/recipe_recommendations_screen.dart';
 import 'package:what_can_i_make/core/initialization/app_initializer.dart';
-import 'features/auth/presentation/account_screen.dart';
-import 'package:what_can_i_make/core/services/request_limit_service.dart';
+import 'features/user/presentation/account_screen.dart';
+import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
 
 // Global navigator key for app-wide navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -36,9 +35,9 @@ void main() async {
     runApp(
       MyApp(
         errorHandler: services.errorHandler,
-        storageRepository: services.storageRepository,
         inventoryService: services.inventoryService,
         requestLimitService: services.requestLimitService,
+        authService: services.authService,
       ),
     );
   } catch (e, stackTrace) {
@@ -53,16 +52,16 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final ErrorHandler errorHandler;
-  final StorageRepository storageRepository;
   final InventoryService inventoryService;
   final RequestLimitService requestLimitService;
+  final AuthService authService;
 
   const MyApp({
     super.key,
     required this.errorHandler,
-    required this.storageRepository,
     required this.inventoryService,
     required this.requestLimitService,
+    required this.authService,
   });
 
   @override
@@ -83,9 +82,8 @@ class MyApp extends StatelessWidget {
 
   List<SingleChildWidget> _buildProviders() {
     return [
-      ChangeNotifierProvider(create: (_) => AuthService()),
+      ChangeNotifierProvider(create: (_) => authService),
       Provider<ErrorHandler>.value(value: errorHandler),
-      Provider<StorageRepository>.value(value: storageRepository),
       Provider<InventoryService>.value(value: inventoryService),
       ChangeNotifierProvider<RequestLimitService>.value(
         value: requestLimitService,

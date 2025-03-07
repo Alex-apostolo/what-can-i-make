@@ -1,17 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:what_can_i_make/core/database/database.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/core/utils/logger.dart';
-import 'package:what_can_i_make/data/repositories/storage_repository.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'package:what_can_i_make/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:what_can_i_make/core/services/request_limit_service.dart';
+import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
+import 'package:what_can_i_make/features/user/data/user_repository.dart';
+import 'package:what_can_i_make/features/inventory/data/inventory_repository.dart';
+import 'package:what_can_i_make/features/auth/domain/auth_service.dart';
 
 import 'app_services.dart';
 
@@ -37,17 +39,31 @@ class AppInitializer {
       // Initialize Firebase and Crashlytics
       await _initializeFirebase();
 
-      // Initialize local database
-      final database = await _initializeDatabase();
-
       // Set up services and repositories
-      final services = await _setupServices(database);
+      final database = FirebaseFirestore.instance;
+      final userRepository = UserRepository(database: database);
+      final inventoryRepository = InventoryRepository(database: database);
+      final inventoryService = InventoryService(
+        inventoryRepository: inventoryRepository,
+      );
+      final requestLimitService = RequestLimitService(
+        userRepository: userRepository,
+        auth: FirebaseAuth.instance,
+      );
+      final authService = AuthService(userRepository: userRepository);
 
       // Set device orientation
       await _setDeviceOrientation();
 
       logger.i('Application initialization complete');
-      return services;
+      return AppServices(
+        errorHandler: ErrorHandler(navigatorKey: navigatorKey),
+        inventoryRepository: inventoryRepository,
+        userRepository: userRepository,
+        inventoryService: inventoryService,
+        requestLimitService: requestLimitService,
+        authService: authService,
+      );
     } catch (e, stackTrace) {
       logger.f(
         'Failed to initialize application',
@@ -90,34 +106,6 @@ class AppInitializer {
     // Initialize Crashlytics
     await _initializeCrashlytics();
     logger.d('Crashlytics initialized');
-  }
-
-  Future<AppDatabase> _initializeDatabase() async {
-    final database = await Database.initializeDatabase();
-    logger.d('Database initialized');
-    return database;
-  }
-
-  Future<AppServices> _setupServices(AppDatabase database) async {
-    final errorHandler = ErrorHandler(navigatorKey: navigatorKey);
-    final storageRepository = StorageRepository(database: database);
-
-    // Create request limit service
-    final requestLimitService = RequestLimitService(
-      firestore: database,
-      auth: FirebaseAuth.instance,
-    );
-
-    final inventoryService = InventoryService(
-      storageRepository: storageRepository,
-    );
-
-    return AppServices(
-      errorHandler: errorHandler,
-      storageRepository: storageRepository,
-      inventoryService: inventoryService,
-      requestLimitService: requestLimitService,
-    );
   }
 
   Future<void> _setDeviceOrientation() async {

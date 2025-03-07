@@ -1,14 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/foundation.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
-import 'package:what_can_i_make/core/models/user.dart';
+import 'package:what_can_i_make/features/user/models/user.dart';
+import 'package:what_can_i_make/features/user/data/user_repository.dart';
 import 'package:dartz/dartz.dart';
 
 class AuthService extends ChangeNotifier {
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
+  final UserRepository _userRepository;
   User? _currentUser;
 
-  AuthService() {
+  AuthService({required UserRepository userRepository})
+    : _userRepository = userRepository {
     _firebaseAuth.authStateChanges().listen((firebase.User? firebaseUser) {
       if (firebaseUser != null) {
         _currentUser = User.fromFirebaseUser(firebaseUser);
@@ -57,6 +60,10 @@ class AuthService extends ChangeNotifier {
 
       if (userCredential.user != null) {
         _currentUser = User.fromFirebaseUser(userCredential.user!);
+        final result = await createUserInDatabase();
+        if (result.isLeft()) {
+          return Left(AuthFailure('Failed to create user profile', null));
+        }
         notifyListeners();
         return Right(_currentUser!);
       }
@@ -68,7 +75,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<Either<Failure, void>> updateProfile({
+  Future<Either<Failure, Unit>> createUserInDatabase() async {
+    final user = _currentUser;
+    if (user == null) {
+      return Left(AuthFailure('No user is signed in', null));
+    }
+
+    return _userRepository.saveUser(user);
+  }
+
+  Future<Either<Failure, Unit>> updateProfile({
     String? displayName,
     String? photoURL,
   }) async {
@@ -78,21 +94,26 @@ class AuthService extends ChangeNotifier {
         return Left(AuthFailure('No user is signed in', null));
       }
 
-      await user.updateDisplayName(displayName);
-      await user.updatePhotoURL(photoURL);
+      if (displayName != null) {
+        await user.updateDisplayName(displayName);
+      }
+
+      if (photoURL != null) {
+        await user.updatePhotoURL(photoURL);
+      }
 
       _currentUser = User.fromFirebaseUser(user);
       notifyListeners();
-      return const Right(null);
+      return const Right(unit);
     } on Exception catch (e) {
       return Left(AuthFailure('Failed to update profile', e));
     }
   }
 
-  Future<Either<Failure, void>> resetPassword(String email) async {
+  Future<Either<Failure, Unit>> resetPassword(String email) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-      return const Right(null);
+      return const Right(unit);
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
     } on Exception catch (e) {
@@ -100,12 +121,12 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<Either<Failure, void>> signOut() async {
+  Future<Either<Failure, Unit>> signOut() async {
     try {
       await _firebaseAuth.signOut();
       _currentUser = null;
       notifyListeners();
-      return const Right(null);
+      return const Right(unit);
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }

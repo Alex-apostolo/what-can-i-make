@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:dartz/dartz.dart';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
-import 'package:what_can_i_make/core/models/recipe.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
+import 'package:what_can_i_make/features/recipes/models/recipe.dart';
 import 'package:what_can_i_make/core/services/openai_service_base.dart';
 
 class RecipeRecommendationService extends OpenAIServiceBase {

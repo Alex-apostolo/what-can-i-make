@@ -1,20 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as firebase;
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
-import 'package:what_can_i_make/core/database/database.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
+import 'package:what_can_i_make/core/utils/firebase_error_handler.dart';
 
-/// Repository for handling Firestore storage operations.
-class StorageRepository {
-  final AppDatabase database;
+/// Repository for handling inventory-related Firestore operations.
+class InventoryRepository {
+  final firebase.FirebaseFirestore _database;
 
-  StorageRepository({required this.database});
+  InventoryRepository({required firebase.FirebaseFirestore database})
+    : _database = database;
 
   firebase.CollectionReference get _ingredientsCollection =>
-      database.collection('ingredients');
+      _database.collection('ingredients');
 
-  /// Retrieves all ingredients, optionally sorted by timestamp.
-  Future<Either<Failure, List<Ingredient>>> getIngredients({
+  /// Retrieves all inventory items, optionally sorted by timestamp.
+  Future<Either<Failure, List<Ingredient>>> getInventory({
     bool sortByTimestamp = true,
   }) async {
     try {
@@ -34,7 +35,12 @@ class StorageRepository {
 
       return Right(ingredients);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+      return Left(
+        DatabaseQueryFailure(
+          FirebaseErrorHandler.getFriendlyErrorMessage(e),
+          e,
+        ),
+      );
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
@@ -45,7 +51,7 @@ class StorageRepository {
     List<IngredientInput> ingredientInputs,
   ) async {
     try {
-      final batch = database.batch();
+      final batch = _database.batch();
 
       for (final ingredientInput in ingredientInputs) {
         final docRef = _ingredientsCollection.doc();
@@ -60,7 +66,12 @@ class StorageRepository {
       await batch.commit();
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+      return Left(
+        DatabaseQueryFailure(
+          FirebaseErrorHandler.getFriendlyErrorMessage(e),
+          e,
+        ),
+      );
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
@@ -78,7 +89,12 @@ class StorageRepository {
           );
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+      return Left(
+        DatabaseQueryFailure(
+          FirebaseErrorHandler.getFriendlyErrorMessage(e),
+          e,
+        ),
+      );
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
@@ -90,17 +106,22 @@ class StorageRepository {
       await _ingredientsCollection.doc(ingredient.id).delete();
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+      return Left(
+        DatabaseQueryFailure(
+          FirebaseErrorHandler.getFriendlyErrorMessage(e),
+          e,
+        ),
+      );
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
   }
 
-  /// Clears all ingredients using batch delete.
-  Future<Either<Failure, Unit>> clearIngredients() async {
+  /// Clears all inventory items using batch delete.
+  Future<Either<Failure, Unit>> clearInventory() async {
     try {
       final snapshot = await _ingredientsCollection.get();
-      final batch = database.batch();
+      final batch = _database.batch();
 
       for (final doc in snapshot.docs) {
         batch.delete(doc.reference);
@@ -109,28 +130,14 @@ class StorageRepository {
       await batch.commit();
       return Right(unit);
     } on firebase.FirebaseException catch (e) {
-      return Left(DatabaseQueryFailure(_getFriendlyErrorMessage(e), e));
+      return Left(
+        DatabaseQueryFailure(
+          FirebaseErrorHandler.getFriendlyErrorMessage(e),
+          e,
+        ),
+      );
     } on Exception catch (e) {
       return Left(GenericFailure(e));
-    }
-  }
-
-  String _getFriendlyErrorMessage(firebase.FirebaseException e) {
-    switch (e.code) {
-      case 'permission-denied':
-        return 'You do not have permission to access this resource.';
-      case 'unauthenticated':
-        return 'You must be logged in to access this resource.';
-      case 'unauthorized':
-        return 'You are not authorized to access this resource.';
-      case 'invalid-argument':
-        return 'The request contains invalid arguments.';
-      case 'resource-exhausted':
-        return 'The resource has been exhausted.';
-      case 'unavailable':
-        return 'The service is currently unavailable.';
-      default:
-        return 'An unexpected error occurred. Please try again.';
     }
   }
 }

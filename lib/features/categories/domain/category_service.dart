@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
-import 'package:what_can_i_make/core/models/ingredient_category.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient_category.dart';
 import 'package:what_can_i_make/core/services/openai_service_base.dart';
 import 'package:openai_dart/openai_dart.dart';
 

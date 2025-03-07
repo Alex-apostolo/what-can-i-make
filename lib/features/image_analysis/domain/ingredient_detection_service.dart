@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:openai_dart/openai_dart.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
 import 'package:what_can_i_make/core/services/openai_service_base.dart';
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';

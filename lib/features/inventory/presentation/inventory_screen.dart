@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'package:what_can_i_make/features/inventory/presentation/components/app_bar.dart';
 import 'package:what_can_i_make/features/inventory/presentation/components/empty_state.dart';
@@ -35,16 +35,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Future<void> _loadInventory({bool showLoading = true}) async {
     if (showLoading) _setLoading(true);
-    final ingredientsResult = await _inventoryService.getIngredients();
+    final inventoryResult = await _inventoryService.getInventory();
     if (showLoading) _setLoading(false);
 
-    final ingredients = _errorHandler.handleFatalEither(
-      ingredientsResult,
+    final inventory = _errorHandler.handleFatalEither(
+      inventoryResult,
       onRetry: () => _loadInventory(),
     );
 
-    if (ingredients != null && mounted) {
-      setInventory(ingredients);
+    if (inventory != null && mounted) {
+      setInventory(inventory);
     }
   }
 
@@ -101,7 +101,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showClearConfirmationDialog() {
     DialogHelper.showClearConfirmationDialog(
       context,
-      () => _handleIngredientAction(_inventoryService.clearIngredients()),
+      () => _handleIngredientAction(_inventoryService.clearInventory()),
     );
   }
 

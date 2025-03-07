@@ -1,6 +1,6 @@
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
-import 'package:what_can_i_make/core/models/ingredient.dart';
-import 'package:what_can_i_make/core/models/measurement_unit.dart';
+import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
+import 'package:what_can_i_make/features/inventory/models/measurement_unit.dart';
 import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 
