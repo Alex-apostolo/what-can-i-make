@@ -49,7 +49,7 @@ Return only the category name, nothing else.
         return Left(OpenAIEmptyResponseFailure(Exception(response)));
       }
 
-      final cleanedContent = content.replaceAll(RegExp('["\']'), '').trim();
+      final cleanedContent = cleanResponse(content);
       return Right(IngredientCategory.fromString(cleanedContent));
     } on Exception catch (e) {
       return Left(GenericFailure(e));

@@ -25,6 +25,10 @@ abstract class OpenAIServiceBase {
     );
   }
 
+  String cleanResponse(String response) {
+    return response.replaceAll(RegExp(r'```json\n'), '').replaceAll('```', '');
+  }
+
   void dispose() {
     _client.endSession();
   }

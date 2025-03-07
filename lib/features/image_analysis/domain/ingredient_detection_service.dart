@@ -167,7 +167,14 @@ This ensures structured, detailed outputs while avoiding vague or generalized in
         return Left(OpenAIEmptyResponseFailure(Exception(response)));
       }
 
-      return Right(jsonDecode(content)['ingredients']);
+      final cleanedContent = cleanResponse(content);
+      final jsonContent = jsonDecode(cleanedContent);
+      final ingredients =
+          (jsonContent['ingredients'] as List)
+              .map((item) => IngredientInput.fromJson(item))
+              .toList();
+
+      return Right(ingredients);
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
