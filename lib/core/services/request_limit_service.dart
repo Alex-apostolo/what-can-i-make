@@ -13,7 +13,7 @@ class RequestLimitService extends ChangeNotifier {
 
   // In-memory cache of requests used
   int _requestsUsed = 0;
-  final int _requestsLimit = 20; // Default limit
+  final int _requestsLimit = 50; // Default limit
 
   RequestLimitService({
     required FirebaseFirestore firestore,
