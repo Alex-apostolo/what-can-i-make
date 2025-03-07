@@ -47,25 +47,38 @@ class InventoryService {
 
   // Tidies the inventory, removing duplicates and combining quantities
   Future<Either<Failure, void>> _tidyIngredients() async {
+    // Get all ingredients
     final result = await _storageRepository.getIngredients();
-
     if (result.isLeft()) {
       return Left(GenericFailure(Exception(result)));
     }
 
+    // Combine similar ingredients
     final combinedResult = await _ingredientCombinerService.combineIngredients(
       result.getOrElse(() => []),
     );
-
     if (combinedResult.isLeft()) {
       return Left(GenericFailure(Exception(combinedResult)));
     }
 
+    // Clear existing ingredients and add the combined ones
     final tidyIngredients = combinedResult.getOrElse(() => []);
+    final clearResult = await _storageRepository.clearIngredients();
+    if (clearResult.isLeft()) {
+      return Left(GenericFailure(Exception(clearResult)));
+    }
 
+    // Convert Ingredient objects to IngredientInput objects
     return _storageRepository.addIngredients(
       tidyIngredients
-          .map((ingredient) => IngredientInput.fromJson(ingredient as Map<String, dynamic>))
+          .map(
+            (ingredient) => IngredientInput(
+              name: ingredient.name,
+              quantity: ingredient.quantity,
+              unit: ingredient.unit,
+              category: ingredient.category,
+            ),
+          )
           .toList(),
     );
   }

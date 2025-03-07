@@ -131,7 +131,7 @@ class _ImagePickerBottomSheetState extends State<ImagePickerBottomSheet> {
     _showProcessingDialog(pickedImages.count);
 
     // Process the images
-    await _errorHandler.handleEither(
+    _errorHandler.handleEither(
       await _imageService.processImages(pickedImages.images),
     );
 
