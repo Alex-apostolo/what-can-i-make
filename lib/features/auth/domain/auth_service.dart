@@ -81,7 +81,7 @@ class AuthService extends ChangeNotifier {
       return Left(AuthFailure('No user is signed in', null));
     }
 
-    return _userRepository.saveUser(user);
+    return _userRepository.saveUserData(user);
   }
 
   Future<Either<Failure, Unit>> updateProfile({

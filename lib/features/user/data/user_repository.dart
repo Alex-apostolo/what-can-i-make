@@ -15,9 +15,17 @@ class UserRepository {
       _database.collection('users');
 
   /// Creates or updates a user document in Firestore
-  Future<Either<Failure, Unit>> saveUser(User user) async {
+  Future<Either<Failure, Unit>> saveUserData(User user) async {
     try {
-      await _usersCollection.doc(user.id).set(user.toJson());
+      // Only save the request usage data
+      await _usersCollection.doc(user.id).set(
+        {
+          'requestsUsed': user.requestsUsed,
+          'requestsLimit': user.requestsLimit,
+        },
+        firebase.SetOptions(merge: true),
+      ); // Use merge to avoid overwriting other fields
+
       return const Right(unit);
     } on firebase.FirebaseException catch (e) {
       return Left(

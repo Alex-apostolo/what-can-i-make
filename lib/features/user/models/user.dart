@@ -23,15 +23,8 @@ class User {
       email: firebaseUser.email ?? '',
       displayName: firebaseUser.displayName,
       photoUrl: firebaseUser.photoURL,
-    );
-  }
-
-  User copyWith({String? displayName, String? photoUrl}) {
-    return User(
-      id: id,
-      email: email,
-      displayName: displayName ?? displayName,
-      photoUrl: photoUrl ?? photoUrl,
+      requestsUsed: 0,
+      requestsLimit: 50,
     );
   }
 
