@@ -43,5 +43,5 @@ class ItemNotFoundFailure extends Failure {
 }
 
 class AuthFailure extends Failure {
-  const AuthFailure(String message) : super(message);
+  const AuthFailure(super.message);
 }

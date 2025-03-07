@@ -144,5 +144,5 @@ class AuthService extends ChangeNotifier {
 }
 
 class AuthFailure extends Failure {
-  AuthFailure(String message) : super(message);
+  AuthFailure(super.message);
 }
