@@ -93,7 +93,7 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider<RequestLimitService>.value(
         value: requestLimitService,
       ),
-      Provider<PaymentService>.value(value: paymentService),
+      ChangeNotifierProvider<PaymentService>.value(value: paymentService),
     ];
   }
 

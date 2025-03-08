@@ -16,7 +16,6 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   late final PaymentService _paymentService;
   late final ErrorHandler _errorHandler;
-  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -26,24 +25,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _purchasePackage(PaymentPackage package) async {
-    setState(() => _isProcessing = true);
     final result = await _paymentService.purchaseRequestPackage(package);
-    setState(() => _isProcessing = false);
 
     _errorHandler.handleEither(result);
 
     if (result.isRight()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Successfully purchased ${package.requestCount} API requests!',
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully purchased ${package.requestCount} API requests!',
+            ),
+            backgroundColor: Colors.green,
           ),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.of(
-        context,
-      ).pop(true); // Return true to indicate successful purchase
+        );
+        Navigator.of(
+          context,
+        ).pop(true); // Return true to indicate successful purchase
+      }
     }
   }
 
@@ -51,12 +50,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final packages = _paymentService.getAvailablePackages();
+
+    // Listen to payment service changes
+    final paymentService = context.watch<PaymentService>();
+    final isProcessing = paymentService.purchasePending;
+    final purchaseError = paymentService.purchaseError;
+    final packages = paymentService.getAvailablePackages();
+    final storeAvailable = paymentService.isAvailable;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Upgrade Plan')),
       body:
-          _isProcessing
+          isProcessing
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
@@ -76,6 +81,59 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         color: colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
+
+                    if (purchaseError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Card(
+                          color: colorScheme.errorContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: colorScheme.error,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    'Error: $purchaseError',
+                                    style: TextStyle(color: colorScheme.error),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    if (!storeAvailable)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Card(
+                          color: colorScheme.errorContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.store_mall_directory,
+                                  color: colorScheme.error,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    'Store is currently unavailable. Please try again later.',
+                                    style: TextStyle(color: colorScheme.error),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
                     const SizedBox(height: 24),
                     ...packages.map(
                       (package) =>
@@ -208,7 +266,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               icon: Icons.security,
               title: 'Secure payments',
               description:
-                  'All transactions are secure and processed through our payment provider.',
+                  'All transactions are secure and processed through the App Store or Google Play.',
               colorScheme: colorScheme,
             ),
           ],
