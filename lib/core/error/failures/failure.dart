@@ -27,8 +27,11 @@ class DatabaseQueryFailure extends Failure {
 /// Generic failure for unexpected errors
 class GenericFailure extends Failure {
   /// Creates a generic failure with a default message and optional error details
-  const GenericFailure(Exception error)
-    : super('An unexpected error occurred. Please try again.', error);
+  const GenericFailure({String? message, Exception? error})
+    : super(
+        message ?? 'An unexpected error occurred. Please try again.',
+        error,
+      );
 }
 
 /// Failure related to OpenAI API requests
@@ -52,7 +55,6 @@ class OpenAIConnectionFailure extends Failure {
     : super('Failed to connect to OpenAI API', error);
 }
 
-/// Failure when parsing OpenAI response
 class ParsingFailure extends Failure {
   /// Creates a new ParsingFailure with optional error details
   const ParsingFailure(Exception error) : super('Parsing error', error);

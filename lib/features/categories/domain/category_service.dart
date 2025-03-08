@@ -51,8 +51,10 @@ Return only the category name, nothing else.
 
       final cleanedContent = cleanResponse(content);
       return Right(IngredientCategory.fromString(cleanedContent));
+    } on OpenAIClientException catch (e) {
+      return Left(OpenAIRequestFailure(e));
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 }

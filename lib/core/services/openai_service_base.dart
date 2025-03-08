@@ -1,6 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:openai_dart/openai_dart.dart';
 import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
+import 'package:what_can_i_make/core/error/exceptions/api_exceptions.dart';
 
 /// Base class for OpenAI services
 abstract class OpenAIServiceBase {
@@ -36,7 +37,9 @@ abstract class OpenAIServiceBase {
     // Check if we've exceeded the request limit
     final canProceed = await checkRequestLimit();
     if (!canProceed) {
-      throw Exception('API request limit exceeded. Please upgrade your plan.');
+      throw ApiLimitExceededException(
+        'API request limit exceeded. Please upgrade your plan.',
+      );
     }
 
     final response = await _client.createChatCompletion(

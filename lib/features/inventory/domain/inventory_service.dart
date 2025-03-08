@@ -50,7 +50,7 @@ class InventoryService {
     // Get all ingredients
     final result = await _inventoryRepository.getInventory();
     if (result.isLeft()) {
-      return Left(GenericFailure(Exception(result)));
+      return Left(GenericFailure(error: Exception(result)));
     }
 
     // Combine similar ingredients
@@ -58,14 +58,14 @@ class InventoryService {
       result.getOrElse(() => []),
     );
     if (combinedResult.isLeft()) {
-      return Left(GenericFailure(Exception(combinedResult)));
+      return Left(GenericFailure(error: Exception(combinedResult)));
     }
 
     // Clear existing ingredients and add the combined ones
     final tidyIngredients = combinedResult.getOrElse(() => []);
     final clearResult = await _inventoryRepository.clearInventory();
     if (clearResult.isLeft()) {
-      return Left(GenericFailure(Exception(clearResult)));
+      return Left(GenericFailure(error: Exception(clearResult)));
     }
 
     // Convert Ingredient objects to IngredientInput objects

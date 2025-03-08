@@ -51,14 +51,14 @@ class RequestLimitService extends ChangeNotifier {
       // Update user's request usage in repository
       return _userRepository.saveRequestUsage(userId, _requestsUsed);
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
   /// Reset request usage for the current user
   Future<Either<Failure, Unit>> resetRequestUsage() async {
     try {
-      _requestsUsed = 0;
+      _requestsUsed = UserLimits.initialRequestCount;
       notifyListeners();
 
       final userId = _auth.currentUser?.uid;
@@ -69,7 +69,7 @@ class RequestLimitService extends ChangeNotifier {
 
       return const Right(unit);
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 

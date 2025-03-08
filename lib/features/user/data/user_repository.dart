@@ -39,7 +39,7 @@ class UserRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -63,7 +63,7 @@ class UserRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -87,7 +87,7 @@ class UserRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -106,7 +106,7 @@ class UserRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -124,7 +124,7 @@ class UserRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -142,7 +142,7 @@ class UserRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 }

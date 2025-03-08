@@ -5,6 +5,8 @@ import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/inventory/models/ingredient.dart';
 import 'package:what_can_i_make/features/recipes/models/recipe.dart';
 import 'package:what_can_i_make/core/services/openai_service_base.dart';
+import 'package:what_can_i_make/core/error/exceptions/api_exceptions.dart';
+import 'package:what_can_i_make/core/error/failures/api_failure.dart';
 
 class RecipeRecommendationService extends OpenAIServiceBase {
   RecipeRecommendationService({required super.requestLimitService});
@@ -64,10 +66,12 @@ Format the response as a JSON array with the following structure for each recipe
       }
 
       return _parseResponse(content);
+    } on ApiLimitExceededException catch (e) {
+      return Left(ApiLimitFailure(e.message, e));
     } on OpenAIClientException catch (e) {
       return Left(OpenAIRequestFailure(e));
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 

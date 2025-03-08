@@ -50,7 +50,7 @@ class AuthService extends ChangeNotifier {
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -85,7 +85,7 @@ class AuthService extends ChangeNotifier {
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -122,7 +122,7 @@ class AuthService extends ChangeNotifier {
     } on firebase.FirebaseAuthException catch (e) {
       return Left(_getFriendlyErrorMessage(e));
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -133,7 +133,7 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
       return const Right(unit);
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 

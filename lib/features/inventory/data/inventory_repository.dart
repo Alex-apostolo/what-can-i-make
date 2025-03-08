@@ -42,7 +42,7 @@ class InventoryRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -73,7 +73,7 @@ class InventoryRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -96,7 +96,7 @@ class InventoryRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -113,7 +113,7 @@ class InventoryRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 
@@ -137,7 +137,7 @@ class InventoryRepository {
         ),
       );
     } on Exception catch (e) {
-      return Left(GenericFailure(e));
+      return Left(GenericFailure(error: e));
     }
   }
 }
