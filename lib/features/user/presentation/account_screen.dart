@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/features/auth/domain/auth_service.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -120,7 +119,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'API Usage',
+                      'AI Credits',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -141,12 +140,22 @@ class _AccountScreenState extends State<AccountScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '$requestsUsed requests used',
-                          style: theme.textTheme.bodyMedium,
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.auto_awesome,
+                              color: colorScheme.primary,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${requestsLimit - requestsUsed} credits remaining',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
                         ),
                         Text(
-                          '$requestsLimit requests limit',
+                          '$requestsLimit total credits',
                           style: theme.textTheme.bodyMedium,
                         ),
                       ],
@@ -156,8 +165,8 @@ class _AccountScreenState extends State<AccountScreen> {
                       onPressed: () {
                         Navigator.of(context).pushNamed('/payment');
                       },
-                      icon: const FaIcon(FontAwesomeIcons.crown, size: 16),
-                      label: const Text('Upgrade Plan'),
+                      icon: const Icon(Icons.add_shopping_cart, size: 16),
+                      label: const Text('Get More Credits'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.primary,
                         side: BorderSide(color: colorScheme.primary),

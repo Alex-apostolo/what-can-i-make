@@ -38,27 +38,41 @@ class PaymentService extends ChangeNotifier {
 
   // Package definitions
   static final Map<String, PaymentPackage> _packageDefinitions = {
-    'api_requests_basic': PaymentPackage(
-      id: 'api_requests_basic',
-      name: 'Basic',
-      requestCount: 250,
-      price: 2.99,
-      description: '250 additional API requests',
+    'starter_pack': PaymentPackage(
+      id: 'starter_pack',
+      name: 'Starter Pack',
+      requestCount: 100,
+      price: 1.99,
+      description: '100 AI credits for recipe suggestions',
+      icon: 'assets/icons/starter_pack.png',
     ),
-    'api_requests_standard': PaymentPackage(
-      id: 'api_requests_standard',
-      name: 'Standard',
-      requestCount: 500,
+    'chef_pack': PaymentPackage(
+      id: 'chef_pack',
+      name: 'Chef Pack',
+      requestCount: 300,
       price: 4.99,
-      description: '500 additional API requests',
+      description: '300 AI credits for recipe suggestions',
       isBestValue: true,
+      icon: 'assets/icons/chef_pack.png',
+      badgeText: 'POPULAR',
     ),
-    'api_requests_premium': PaymentPackage(
-      id: 'api_requests_premium',
-      name: 'Premium',
-      requestCount: 1500,
+    'gourmet_pack': PaymentPackage(
+      id: 'gourmet_pack',
+      name: 'Gourmet Pack',
+      requestCount: 1000,
       price: 9.99,
-      description: '1500 additional API requests',
+      description: '1000 AI credits for recipe suggestions',
+      icon: 'assets/icons/gourmet_pack.png',
+      badgeText: 'BEST VALUE',
+      valueRatio: 120, // Manually set higher value ratio
+    ),
+    'custom_pack': PaymentPackage(
+      id: 'custom_pack',
+      name: 'Custom Pack',
+      requestCount: 50,
+      price: 0.99,
+      description: '50 AI credits for recipe suggestions',
+      icon: 'assets/icons/custom_pack.png',
     ),
   };
 
@@ -147,6 +161,9 @@ class PaymentService extends ChangeNotifier {
         price: double.tryParse(product.price) ?? package.price,
         description: package.description,
         isBestValue: package.isBestValue,
+        icon: package.icon,
+        badgeText: package.badgeText,
+        valueRatio: package.valueRatio,
       );
     }).toList();
   }

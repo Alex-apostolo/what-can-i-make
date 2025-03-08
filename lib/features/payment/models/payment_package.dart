@@ -1,4 +1,4 @@
-/// Model representing a purchasable API request package
+/// Model representing a purchasable API request credit pack
 class PaymentPackage {
   final String id;
   final String name;
@@ -6,6 +6,9 @@ class PaymentPackage {
   final double price;
   final String description;
   final bool isBestValue;
+  final String icon;
+  final String? badgeText;
+  final double valueRatio; // Higher is better value
 
   const PaymentPackage({
     required this.id,
@@ -14,5 +17,8 @@ class PaymentPackage {
     required this.price,
     required this.description,
     this.isBestValue = false,
-  });
+    required this.icon,
+    this.badgeText,
+    double? valueRatio,
+  }) : valueRatio = valueRatio ?? (requestCount / price);
 }
