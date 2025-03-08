@@ -14,6 +14,7 @@ import 'package:what_can_i_make/features/user/domain/request_limit_service.dart'
 import 'package:what_can_i_make/features/user/data/user_repository.dart';
 import 'package:what_can_i_make/features/inventory/data/inventory_repository.dart';
 import 'package:what_can_i_make/features/auth/domain/auth_service.dart';
+import 'package:what_can_i_make/features/payment/domain/payment_service.dart';
 
 import 'app_services.dart';
 
@@ -54,6 +55,11 @@ class AppInitializer {
         userRepository: userRepository,
         errorHandler: ErrorHandler(navigatorKey: navigatorKey),
       );
+      final paymentService = PaymentService(
+        auth: FirebaseAuth.instance,
+        userRepository: userRepository,
+        requestLimitService: requestLimitService,
+      );
 
       // Set device orientation
       await _setDeviceOrientation();
@@ -66,6 +72,7 @@ class AppInitializer {
         inventoryService: inventoryService,
         requestLimitService: requestLimitService,
         authService: authService,
+        paymentService: paymentService,
       );
     } catch (e, stackTrace) {
       logger.f(

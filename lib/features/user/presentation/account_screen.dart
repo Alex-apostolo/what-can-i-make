@@ -154,12 +154,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
                       onPressed: () {
-                        // This would navigate to a subscription screen in the future
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Subscription features coming soon!'),
-                          ),
-                        );
+                        Navigator.of(context).pushNamed('/payment');
                       },
                       icon: const FaIcon(FontAwesomeIcons.crown, size: 16),
                       label: const Text('Upgrade Plan'),

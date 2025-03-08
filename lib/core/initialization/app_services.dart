@@ -4,6 +4,7 @@ import 'package:what_can_i_make/features/user/data/user_repository.dart';
 import 'package:what_can_i_make/features/inventory/domain/inventory_service.dart';
 import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
 import 'package:what_can_i_make/features/auth/domain/auth_service.dart';
+import 'package:what_can_i_make/features/payment/domain/payment_service.dart';
 
 class AppServices {
   final ErrorHandler errorHandler;
@@ -12,6 +13,7 @@ class AppServices {
   final InventoryService inventoryService;
   final RequestLimitService requestLimitService;
   final AuthService authService;
+  final PaymentService paymentService;
 
   AppServices({
     required this.errorHandler,
@@ -20,5 +22,6 @@ class AppServices {
     required this.inventoryService,
     required this.requestLimitService,
     required this.authService,
+    required this.paymentService,
   });
 }

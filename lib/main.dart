@@ -14,6 +14,8 @@ import 'features/recipes/presentation/recipe_recommendations_screen.dart';
 import 'package:what_can_i_make/core/initialization/app_initializer.dart';
 import 'features/user/presentation/account_screen.dart';
 import 'package:what_can_i_make/features/user/domain/request_limit_service.dart';
+import 'features/payment/domain/payment_service.dart';
+import 'features/payment/presentation/payment_screen.dart';
 
 // Global navigator key for app-wide navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -38,6 +40,7 @@ void main() async {
         inventoryService: services.inventoryService,
         requestLimitService: services.requestLimitService,
         authService: services.authService,
+        paymentService: services.paymentService,
       ),
     );
   } catch (e, stackTrace) {
@@ -55,6 +58,7 @@ class MyApp extends StatelessWidget {
   final InventoryService inventoryService;
   final RequestLimitService requestLimitService;
   final AuthService authService;
+  final PaymentService paymentService;
 
   const MyApp({
     super.key,
@@ -62,6 +66,7 @@ class MyApp extends StatelessWidget {
     required this.inventoryService,
     required this.requestLimitService,
     required this.authService,
+    required this.paymentService,
   });
 
   @override
@@ -88,17 +93,19 @@ class MyApp extends StatelessWidget {
       ChangeNotifierProvider<RequestLimitService>.value(
         value: requestLimitService,
       ),
+      Provider<PaymentService>.value(value: paymentService),
     ];
   }
 
   Map<String, WidgetBuilder> _buildRoutes() {
     return {
-      SignInScreen.routeName: (context) => SignInScreen(),
-      SignUpScreen.routeName: (context) => SignUpScreen(),
-      InventoryScreen.routeName: (context) => InventoryScreen(),
+      SignInScreen.routeName: (context) => const SignInScreen(),
+      SignUpScreen.routeName: (context) => const SignUpScreen(),
+      InventoryScreen.routeName: (context) => const InventoryScreen(),
       RecipeRecommendationsScreen.routeName:
-          (context) => RecipeRecommendationsScreen(),
-      AccountScreen.routeName: (context) => AccountScreen(),
+          (context) => const RecipeRecommendationsScreen(),
+      AccountScreen.routeName: (context) => const AccountScreen(),
+      PaymentScreen.routeName: (context) => const PaymentScreen(),
     };
   }
 }

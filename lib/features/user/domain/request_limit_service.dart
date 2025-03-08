@@ -106,4 +106,9 @@ class RequestLimitService extends ChangeNotifier {
       _logger.e('Error loading user data', error: e);
     }
   }
+
+  /// Load request usage and limit from repository
+  Future<void> refreshLimits() async {
+    await _loadUserData();
+  }
 }
