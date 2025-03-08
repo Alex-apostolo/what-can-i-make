@@ -50,7 +50,10 @@ class AppInitializer {
         userRepository: userRepository,
         auth: FirebaseAuth.instance,
       );
-      final authService = AuthService(userRepository: userRepository);
+      final authService = AuthService(
+        userRepository: userRepository,
+        errorHandler: ErrorHandler(navigatorKey: navigatorKey),
+      );
 
       // Set device orientation
       await _setDeviceOrientation();

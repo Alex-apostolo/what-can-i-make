@@ -1,17 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/foundation.dart';
+import 'package:what_can_i_make/core/error/error_handler.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/user/models/user.dart';
 import 'package:what_can_i_make/features/user/data/user_repository.dart';
 import 'package:dartz/dartz.dart';
+import 'package:what_can_i_make/features/user/models/user_limits.dart';
 
 class AuthService extends ChangeNotifier {
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
   final UserRepository _userRepository;
+  final ErrorHandler _errorHandler;
   User? _currentUser;
 
-  AuthService({required UserRepository userRepository})
-    : _userRepository = userRepository {
+  AuthService({
+    required UserRepository userRepository,
+    required ErrorHandler errorHandler,
+  }) : _userRepository = userRepository,
+       _errorHandler = errorHandler {
     _firebaseAuth.authStateChanges().listen((firebase.User? firebaseUser) {
       if (firebaseUser != null) {
         _currentUser = User.fromFirebaseUser(firebaseUser);
@@ -60,10 +66,18 @@ class AuthService extends ChangeNotifier {
 
       if (userCredential.user != null) {
         _currentUser = User.fromFirebaseUser(userCredential.user!);
-        final result = await createUserInDatabase();
-        if (result.isLeft()) {
-          return Left(AuthFailure('Failed to create user profile', null));
-        }
+        _errorHandler.handleEither(
+          await _userRepository.saveRequestLimit(
+            _currentUser!.id,
+            UserLimits.defaultRequestLimit,
+          ),
+        );
+        _errorHandler.handleEither(
+          await _userRepository.saveRequestUsage(
+            _currentUser!.id,
+            UserLimits.initialRequestCount,
+          ),
+        );
         notifyListeners();
         return Right(_currentUser!);
       }
@@ -73,15 +87,6 @@ class AuthService extends ChangeNotifier {
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
-  }
-
-  Future<Either<Failure, Unit>> createUserInDatabase() async {
-    final user = _currentUser;
-    if (user == null) {
-      return Left(AuthFailure('No user is signed in', null));
-    }
-
-    return _userRepository.saveUserData(user);
   }
 
   Future<Either<Failure, Unit>> updateProfile({

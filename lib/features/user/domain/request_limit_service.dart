@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/user/data/user_repository.dart';
 import 'package:dartz/dartz.dart';
+import 'package:what_can_i_make/features/user/models/user_limits.dart';
 
 /// Service to track and manage API request limits
 class RequestLimitService extends ChangeNotifier {
@@ -11,9 +12,9 @@ class RequestLimitService extends ChangeNotifier {
   final FirebaseAuth _auth;
   final Logger _logger = Logger();
 
-  // In-memory cache of requests used
-  int _requestsUsed = 0;
-  final int _requestsLimit = 50; // Default limit
+  // In-memory cache of requests used and limit
+  int _requestsUsed = UserLimits.initialRequestCount;
+  int _requestsLimit = UserLimits.defaultRequestLimit; // Default limit
 
   RequestLimitService({
     required UserRepository userRepository,
@@ -21,7 +22,7 @@ class RequestLimitService extends ChangeNotifier {
   }) : _userRepository = userRepository,
        _auth = auth {
     // Load request usage when service is created
-    _loadRequestUsage();
+    _loadUserData();
   }
 
   /// Get the current number of requests used
@@ -48,7 +49,7 @@ class RequestLimitService extends ChangeNotifier {
       }
 
       // Update user's request usage in repository
-      return _userRepository.updateRequestUsage(userId, _requestsUsed);
+      return _userRepository.saveRequestUsage(userId, _requestsUsed);
     } on Exception catch (e) {
       return Left(GenericFailure(e));
     }
@@ -72,15 +73,15 @@ class RequestLimitService extends ChangeNotifier {
     }
   }
 
-  /// Load request usage from repository
-  Future<void> _loadRequestUsage() async {
+  /// Load both request usage and limit from repository
+  Future<void> _loadUserData() async {
     try {
       final userId = _auth.currentUser?.uid;
 
       if (userId != null) {
-        final result = await _userRepository.getRequestUsage(userId);
-
-        result.fold(
+        // Load request usage
+        final usageResult = await _userRepository.getRequestUsage(userId);
+        usageResult.fold(
           (failure) =>
               _logger.e('Error loading request usage', error: failure.error),
           (usage) {
@@ -88,10 +89,21 @@ class RequestLimitService extends ChangeNotifier {
             notifyListeners();
           },
         );
+
+        // Load request limit
+        final limitResult = await _userRepository.getRequestLimit(userId);
+        limitResult.fold(
+          (failure) =>
+              _logger.e('Error loading request limit', error: failure.error),
+          (limit) {
+            _requestsLimit = limit;
+            notifyListeners();
+          },
+        );
       }
     } catch (e) {
       // Just log the error, don't throw
-      _logger.e('Error loading request usage', error: e);
+      _logger.e('Error loading user data', error: e);
     }
   }
 }

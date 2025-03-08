@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:what_can_i_make/core/error/failures/failure.dart';
 import 'package:what_can_i_make/features/user/models/user.dart';
 import 'package:what_can_i_make/core/utils/firebase_error_handler.dart';
+import 'package:what_can_i_make/features/user/models/user_limits.dart';
 
 /// Repository for handling user-related Firestore operations
 class UserRepository {
@@ -13,31 +14,6 @@ class UserRepository {
 
   firebase.CollectionReference get _usersCollection =>
       _database.collection('users');
-
-  /// Creates or updates a user document in Firestore
-  Future<Either<Failure, Unit>> saveUserData(User user) async {
-    try {
-      // Only save the request usage data
-      await _usersCollection.doc(user.id).set(
-        {
-          'requestsUsed': user.requestsUsed,
-          'requestsLimit': user.requestsLimit,
-        },
-        firebase.SetOptions(merge: true),
-      ); // Use merge to avoid overwriting other fields
-
-      return const Right(unit);
-    } on firebase.FirebaseException catch (e) {
-      return Left(
-        DatabaseQueryFailure(
-          FirebaseErrorHandler.getFriendlyErrorMessage(e),
-          e,
-        ),
-      );
-    } on Exception catch (e) {
-      return Left(GenericFailure(e));
-    }
-  }
 
   /// Retrieves a user by ID
   Future<Either<Failure, User>> getUserById(String userId) async {
@@ -67,13 +43,41 @@ class UserRepository {
     }
   }
 
+  /// Updates user request limit
+  Future<Either<Failure, Unit>> saveRequestLimit(
+    String userId,
+    int requestLimit,
+  ) async {
+    try {
+      // Use set with merge to create the document if it doesn't exist
+      await _usersCollection.doc(userId).set({
+        'requestsLimit': requestLimit,
+      }, firebase.SetOptions(merge: true));
+
+      return const Right(unit);
+    } on firebase.FirebaseException catch (e) {
+      return Left(
+        DatabaseQueryFailure(
+          FirebaseErrorHandler.getFriendlyErrorMessage(e),
+          e,
+        ),
+      );
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
+    }
+  }
+
   /// Updates user request usage count
-  Future<Either<Failure, Unit>> updateRequestUsage(
+  Future<Either<Failure, Unit>> saveRequestUsage(
     String userId,
     int requestsUsed,
   ) async {
     try {
-      await _usersCollection.doc(userId).update({'requestsUsed': requestsUsed});
+      // Use set with merge to create the document if it doesn't exist
+      await _usersCollection.doc(userId).set({
+        'requestsUsed': requestsUsed,
+      }, firebase.SetOptions(merge: true));
+
       return const Right(unit);
     } on firebase.FirebaseException catch (e) {
       return Left(
@@ -90,7 +94,9 @@ class UserRepository {
   /// Resets user request usage count
   Future<Either<Failure, Unit>> resetRequestUsage(String userId) async {
     try {
-      await _usersCollection.doc(userId).update({'requestsUsed': 0});
+      await _usersCollection.doc(userId).update({
+        'requestsUsed': UserLimits.initialRequestCount,
+      });
       return const Right(unit);
     } on firebase.FirebaseException catch (e) {
       return Left(
@@ -108,15 +114,26 @@ class UserRepository {
   Future<Either<Failure, int>> getRequestUsage(String userId) async {
     try {
       final docSnapshot = await _usersCollection.doc(userId).get();
-
-      if (!docSnapshot.exists) {
-        return const Right(
-          0,
-        ); // Default to 0 if user document doesn't exist yet
-      }
-
       final userData = docSnapshot.data() as Map<String, dynamic>;
-      return Right(userData['requestsUsed'] as int? ?? 0);
+      return Right(userData['requestsUsed']);
+    } on firebase.FirebaseException catch (e) {
+      return Left(
+        DatabaseQueryFailure(
+          FirebaseErrorHandler.getFriendlyErrorMessage(e),
+          e,
+        ),
+      );
+    } on Exception catch (e) {
+      return Left(GenericFailure(e));
+    }
+  }
+
+  /// Gets the current request limit for a user
+  Future<Either<Failure, int>> getRequestLimit(String userId) async {
+    try {
+      final docSnapshot = await _usersCollection.doc(userId).get();
+      final userData = docSnapshot.data() as Map<String, dynamic>;
+      return Right(userData['requestsLimit']);
     } on firebase.FirebaseException catch (e) {
       return Left(
         DatabaseQueryFailure(
